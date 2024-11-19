@@ -1,0 +1,18 @@
+{% extends 'base.html' %}
+
+{% block head %} 
+
+{% endblock %}
+
+{% block body %} 
+    <h1>Enter Student List</h1>
+    <div class="all">
+        <form action="/add_student" method="POST" class="left">
+            <input type="text" name='student_name' id='student_name' placeholder="Student name" /><br>
+            <input type="text" name='student_id' id='student_id'  placeholder="Student ID" /><br>
+            <input type="date" name='date_of_birth' id='date_of_birth'  placeholder="Date of Birth" /><br>
+            <!-- <input type="text" name='class_id' id='class_id'  placeholder="Class ID" /><br> -->
+            <button type="submit" >Add student</button>
+        </form>
+ {% endblock %}
+
