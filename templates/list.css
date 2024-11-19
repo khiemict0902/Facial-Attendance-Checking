@@ -1,0 +1,63 @@
+.right_hand_side {
+    display: flex;
+    flex-direction: column;
+    padding: 10px;
+}
+
+.container_rhs{
+    display: flex;
+    padding: 20px;
+    justify-content: space-between;
+}
+
+.subject-time{
+    font-weight: bold;
+}
+.subject-title{
+    font-weight: bold;
+    font-size: 25px;
+    text-align: center;
+    /* font-family: Arial, sans-serif; */
+}
+.table_list{
+    padding-top: 20px;
+}
+
+
+table {
+    width: 100%;
+    border-collapse: collapse;
+    text-align: center;
+    margin: 20px 0;
+}
+
+th, td {
+    border: 1px solid #000;
+    padding: 10px; 
+}
+
+
+thead tr {
+    font-weight: bold; 
+    background-color:lightgray; 
+    text-align: center;
+}
+
+.btn{
+    width: 60px;
+    height: fit-content;
+    border-radius: 10%;
+    font-size: 15px;
+}
+
+.state-1{
+    background-color: lightblue;
+}
+
+.state-2{
+    background-color: lightgoldenrodyellow;
+}
+
+.state-3{
+    background-color: red;
+}
