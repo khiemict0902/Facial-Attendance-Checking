@@ -23,8 +23,8 @@ class Student(db.Model):
 class Class(db.Model):
     __tablename__ = "CLASS"
     
-    class_id = db.Column(db.Integer, primary_key=True, autoincrement=True)
-    class_name = db.Column(db.String(255), unique=True, nullable=False)
+    class_id = db.Column(db.Integer, unique=True, autoincrement=True, nullable=False)
+    class_name = db.Column(db.String(255), primary_key=True, nullable=False)
     
     students = db.relationship('Student', backref='class', lazy=True)
     attendance_records = db.relationship('AttendanceRecord', backref='class', lazy=True)
@@ -83,27 +83,39 @@ class SubjectClass(db.Model):
     class_rel = db.relationship('Class', back_populates='subjects')
     subject_rel = db.relationship('Subject', back_populates='classes')
 
+
+#subjects and classes of subjects
 @app.route('/')
 def home():
     subjects = Subject.query.all()
     subjectClasses = SubjectClass.query.all()
     return render_template('home.html', subjects = subjects, subjectClasses = subjectClasses)
 
+#subject list
 @app.route('/subject')
 def subject():
     subjects = Subject.query.all()
     return render_template('subject_list.html', subjects = subjects)
 
+#delete subject
+# @app.route('/subject/<subject_id/edit') 
+
+#edit subject
+# @app.route('/subject/delete/<id>')
+
+#class list
 @app.route('/class')
 def classes():
     classes = Class.query.all()
     return render_template('class_list.html', classes = classes)
 
+#delete class
+# @app.route('/subject/<class_name/edit') 
 
-@app.route('/check_attendance')
-def check_attendance():
-    return render_template('check_attendance.html')
+#edit class
+# @app.route('/subject/delete/<class_name>')
 
+#student list of a class
 @app.route('/student_list/<subject_id>/<class_name>')
 def student_list(subject_id, class_name):
 
@@ -114,6 +126,14 @@ def student_list(subject_id, class_name):
     attendanceSummaries = AttendanceSummary.query.filter_by(subject_id = subject_id, class_name = class_name).all()
     return render_template('student_list.html', students = students, subject = subject, attendanceRecords =attendanceRecords, attendanceSummaries = attendanceSummaries, attendance_dates = attendance_dates, className = class_name)
 
+#delete student
+# @app.route('/subject/<student_id>/edit') 
+
+#edit student
+# @app.route('/subject/delete/<student_id>')
+
+
+#add subject
 @app.route('/subject/add_subject', methods = ['POST', 'GET'])  
 def add_subject():
     if request.method == 'POST':
@@ -130,7 +150,8 @@ def add_subject():
 
     else:
         return render_template('add_subject.html')
-
+    
+#add class
 @app.route('/class/add_class', methods = ['POST', 'GET'])
 def add_class():
     if request.method == 'POST':
@@ -147,6 +168,8 @@ def add_class():
     else:
         return render_template('add_class.html')
 
+
+#add student
 @app.route('/student_list/<subject_id>/<class_name>/add_student', methods = ['POST', 'GET'])
 def add_student(subject_id, class_name):
     if request.method == 'POST':
@@ -166,7 +189,12 @@ def add_student(subject_id, class_name):
     else:
         subject = Subject.query.filter_by(subject_id=subject_id).first()
         return render_template('add_student.html', subject = subject, className = class_name)
+    
 
+#check attendance
+@app.route('/check_attendance')
+def check_attendance():
+    return render_template('check_attendance.html')
 
 @app.route('/status/<student_id>', methods=['GET'])
 def get_attendance_status(student_id):
@@ -207,6 +235,7 @@ def get_attendance_status(student_id):
     return jsonify({"student_name": student.name, "attendance_records": records})
 
 
+#api
 @app.route('/checking', methods=['POST'])
 def checking():
     data = request.json
@@ -232,7 +261,7 @@ def checking():
 
         return "False"
     
-    
+
 if __name__ == '__main__':
     app.run(debug=True)
 
