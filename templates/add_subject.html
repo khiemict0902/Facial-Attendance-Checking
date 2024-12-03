@@ -1,0 +1,18 @@
+{% extends 'base.html' %}
+
+{% block head %} 
+
+{% endblock %}
+
+{% block body %} 
+    
+    <div class="add_information-container">
+        <h1 class="form_title"> Add Subjects </h1>
+        <form action="/" method="POST" class="add_information-form">
+            <input class="input_form" name="subject_id" type="text" id="subject_id" placeholder="Subject ID" required>
+            <input class="input_form" name="subject_name" type="text" id="subject_name" placeholder="Subject name" required>
+            <button class="button_form" type="submit">Add</button>
+        </form>
+    </div>
+
+{% endblock %}

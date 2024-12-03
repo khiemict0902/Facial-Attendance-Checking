@@ -1,0 +1,70 @@
+{% extends 'base.html' %}
+
+{% block head %} 
+
+{% endblock %}
+
+{% block body %} 
+<div class="add_information-container">
+    <h1 class="form_title">Attendance Status</h1>
+    <form class="add_information-form">
+        <div class="mb-3">
+            <input type="text" name="student_id" id="student_id" class="input_form" placeholder="Enter student ID">
+        </div>
+        <button type="button" class="button_form" onclick="fetchAttendance()">Check Attendance</button>
+    </form>
+
+    <!-- Hiển thị tên sinh viên -->
+    <div id="studentInfo" class="mb-4">
+        <!-- Tên sinh viên sẽ được hiển thị ở đây -->
+    </div>
+
+    <div id="result" class="mt-4">
+        <!-- Kết quả điểm danh sẽ được hiển thị ở đây -->
+    </div>
+</div>
+
+<script>
+    function fetchAttendance() {
+        const studentId = document.getElementById('student_id').value;
+        const resultDiv = document.getElementById('result');
+        const studentInfoDiv = document.getElementById('studentInfo');
+        
+        resultDiv.innerHTML = '<p class="text-info">Fetching attendance...</p>';
+        studentInfoDiv.innerHTML = '';
+
+        fetch(`/status/${studentId}`)
+            .then(response => response.json())
+            .then(data => {
+                if (data.message) {
+                    studentInfoDiv.innerHTML = `<p class="text-danger">${data.message}</p>`;
+                    resultDiv.innerHTML = '';
+                } else {
+                    // Hiển thị tên sinh viên
+                    studentInfoDiv.innerHTML = `<h3>Student Name: <span class="text-primary">${data.student_name}</span></h3>`;
+
+                    // Hiển thị bảng kết quả
+                    let html = '<table class="table table-bordered">';
+                    html += '<thead><tr><th>Class Name</th><th>Subject ID</th><th>Subject Name</th><th>Status</th><th>Date</th></tr></thead><tbody>';
+                    data.attendance_records.forEach(record => {
+                        html += `<tr>
+                            <td>${record.class_name}</td>
+                            <td>${record.subject_id}</td>
+                            <td>${record.subject_name}</td>
+                            <td>${record.status}</td>
+                            <td>${record.date}</td>
+                        </tr>`;
+                    });
+                    html += '</tbody></table>';
+                    resultDiv.innerHTML = html;
+                }
+            })
+            .catch(error => {
+                resultDiv.innerHTML = `<p class="text-danger">Error fetching attendance records.</p>`;
+                console.error(error);
+            });
+    }
+</script>
+
+
+{% endblock %}

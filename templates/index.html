@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Real-Time List Update</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.6.1/socket.io.js"></script>
+</head>
+<body>
+    <h1>Real-Time List</h1>
+    <div id="list"></div>
+
+    <script>
+        const socket = io();
+
+        // Function to render the list
+        function renderList(items) {
+            const listDiv = document.getElementById('list');
+            listDiv.innerHTML = '';
+            items.forEach(item => {
+                listDiv.innerHTML += `<h2>${item}</h2>`;
+            });
+        }
+
+        // Listen for updates from the server
+        socket.on('initial_list', (data) => {
+            renderList(data.items);
+        });
+
+        socket.on('update_list', (data) => {
+            const listDiv = document.getElementById('list');
+            listDiv.innerHTML += `<h2>${data.new_item}</h2>`;
+        });
+    </script>
+</body>
+</html>
+

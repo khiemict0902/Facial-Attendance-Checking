@@ -1,0 +1,17 @@
+{% extends 'base.html' %}
+
+{% block head %} 
+
+{% endblock %}
+
+{% block body %} 
+    
+    <div class="add_information-container">
+        <h1 class="form_title">Add Class</h1>
+        <form action="/" method="POST" class="add_information-form">
+            <input class="input_form" type="text" name="class_name" id="class_ame" placeholder="Enter name of class" required>
+            <button class="button_form" type="submit">Add</button>
+        </form>        
+    </div>
+
+{% endblock %}

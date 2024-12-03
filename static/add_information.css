@@ -1,0 +1,36 @@
+.form_title {
+    text-align: center;
+    color: #333;
+    margin: 20px 0;
+}
+
+.add_information-container {
+    max-width: 80%;
+    margin: auto;
+    background: white;
+    padding: 20px;
+    border-radius: 8px;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+}
+
+.add_information-form {
+    display: flex;
+    flex-direction: column;
+}
+
+.input_form {
+    padding: 10px;
+    border-radius: 4px;
+    width: 100%;
+    margin-bottom: 16px;
+}
+    
+.button_form {
+    padding: 10px;
+    background-color: #2a3c95;
+    color: white;
+    border: none;
+    border-radius: 4px;
+}
+
+

@@ -1,0 +1,29 @@
+
+<div class="container">
+    <h1>Student list</h1>
+
+    <table>
+        <tr>
+            <th>Student Name</th>
+            <th>Student ID</th>
+            <th>Attendance Status</th>
+        </tr>
+        {% for student in students %}
+        <tr>
+            <td>{{ student.name}}</td>
+            <td>{{ student.id}}</td>
+            <td>{{ student.Status}}</td>
+        </tr>
+        {% endfor %}
+    </table>
+
+    <div class="form">
+        <form action="/" method="POST">
+            <label for="student_name">Student Name:</label>
+            <input type="text" name="student_name" id="student_name"><br>
+            <label for="student_name">Student ID:</label>
+            <input type="text" name="student_id" id="student_id"><br>
+            <input type="submit" value="Add Student">
+        </form>
+    </div>
+</div>

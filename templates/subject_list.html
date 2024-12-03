@@ -1,0 +1,36 @@
+{% extends 'base.html' %}
+
+{% block head %} 
+
+{% endblock %}
+
+{% block body %} 
+    <div class="list_container">
+        <div class="toolbar">
+            <button class="list_button add-btn"><a href="/subject/add_subject">Add Subject</a></button>
+            <input type="text" class="search-input" placeholder="Search">
+        </div>
+        
+        <table>
+            <thead>
+                <tr>
+                    <th>Subject ID</th>
+                    <th>Subject Name</th>
+                    <th></th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for subject in subjects %}
+                <tr>
+                    <td>{{subject.subject_id}}</td>
+                    <td>{{subject.subject_name}}</td>
+                    <td>
+                        <button class="list_button edit-btn">Edit</button>
+                        <button class="list_button delete-btn">Delete</button>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+{% endblock %}

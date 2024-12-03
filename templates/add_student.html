@@ -5,14 +5,19 @@
 {% endblock %}
 
 {% block body %} 
-    <h1>Enter Student List</h1>
-    <div class="all">
-        <form action="/add_student" method="POST" class="left">
-            <input type="text" name='student_name' id='student_name' placeholder="Student name" /><br>
-            <input type="text" name='student_id' id='student_id'  placeholder="Student ID" /><br>
-            <input type="date" name='date_of_birth' id='date_of_birth'  placeholder="Date of Birth" /><br>
-            <!-- <input type="text" name='class_id' id='class_id'  placeholder="Class ID" /><br> -->
-            <button type="submit" >Add student</button>
-        </form>
+<div class="add_information-container">
+    <div class="form_title">
+        <h2>{{ subject.subject_id }} - {{subject.subject_name}} </h2><br>
+        <h2>{{ className }}</h2>
+    </div>
+    <h1 class="form_title">Add Student </h1>
+    <form action="/" method="POST" class="add_information-form">
+        <input class="input_form" type="text" name="student_name" id="student_name" placeholder="Enter student name" required>
+        <input class="input_form" type="text" name="student_id" id="student_id" placeholder="Enter student id" required>
+        <input class="input_form" type="text" name="date_of_birth" id="date_of_birth" placeholder="Enter date of birth (yyyy/mm/dd)" required>
+        <button class="button_form" type="submit">Add</button>
+    </form>
+
+</div>
  {% endblock %}
 
