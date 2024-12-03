@@ -75,7 +75,7 @@ class AttendanceSummary(db.Model):
     total_present = db.Column(db.Integer, nullable=False)
 
 class SubjectClass(db.Model):
-    __tablename__ = 'SUBJECT_CLASS'
+    __tablename__ = 'subject_class'
 
     class_name = db.Column(db.String(255), db.ForeignKey('CLASS.class_name'), primary_key=True, nullable=False)
     subject_id = db.Column(db.String(255), db.ForeignKey('SUBJECT.subject_id'), primary_key=True, nullable=False)
@@ -97,11 +97,35 @@ def subject():
     subjects = Subject.query.all()
     return render_template('subject_list.html', subjects = subjects)
 
-#delete subject
+#update subject
 # @app.route('/subject/<subject_id/edit') 
+# def update(id):
+#     task = Todo.query.get_or_404(id)
 
-#edit subject
+#     if request.method == 'POST':
+#         task.content = request.form['content']
+
+#         try:
+#             db.session.commit()
+#             return redirect('/')
+#         except:
+#             return 'There was an issue updating your task'
+
+#     else:
+#         return render_template('update.html', task=task)
+
+#delete
 # @app.route('/subject/delete/<id>')
+# def delete(subject_id):
+#     subject_to_delete = Subject.query.get_or_404(id)
+
+#     try:
+#         db.session.delete(subject_to_delete)
+#         db.session.commit()
+#         return redirect('/')
+#     except:
+#         return 'There was a problem deleting that task'
+
 
 #class list
 @app.route('/class')
@@ -111,9 +135,33 @@ def classes():
 
 #delete class
 # @app.route('/subject/<class_name/edit') 
+# def delete(class_name):
+#     task_to_delete = Todo.query.get_or_404(id)
+
+#     try:
+#         db.session.delete(task_to_delete)
+#         db.session.commit()
+#         return redirect('/')
+#     except:
+#         return 'There was a problem deleting that task'
 
 #edit class
 # @app.route('/subject/delete/<class_name>')
+# def update(id):
+#     task = Todo.query.get_or_404(id)
+
+#     if request.method == 'POST':
+#         task.content = request.form['content']
+
+#         try:
+#             db.session.commit()
+#             return redirect('/')
+#         except:
+#             return 'There was an issue updating your task'
+
+#     else:
+#         return render_template('update.html', task=task)
+
 
 #student list of a class
 @app.route('/student_list/<subject_id>/<class_name>')
@@ -128,9 +176,33 @@ def student_list(subject_id, class_name):
 
 #delete student
 # @app.route('/subject/<student_id>/edit') 
+# def delete(student_id):
+#     task_to_delete = Todo.query.get_or_404(id)
+
+#     try:
+#         db.session.delete(task_to_delete)
+#         db.session.commit()
+#         return redirect('/')
+#     except:
+#         return 'There was a problem deleting that task'
 
 #edit student
 # @app.route('/subject/delete/<student_id>')
+# def update(id):
+#     task = Todo.query.get_or_404(id)
+
+#     if request.method == 'POST':
+#         task.content = request.form['content']
+
+#         try:
+#             db.session.commit()
+#             return redirect('/')
+#         except:
+#             return 'There was an issue updating your task'
+
+#     else:
+#         return render_template('update.html', task=task)
+
 
 
 #add subject
