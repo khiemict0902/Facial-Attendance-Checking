@@ -1,0 +1,15 @@
+{% extends 'base.html' %}
+
+{% block head %}
+{% endblock %}
+
+{% block body %}
+<div class="information-container">
+    <h1 class="form_title"> Edit Subjects </h1>
+    <form  action="/subject/{{subject_to_edit.id}}/edit" method="POST" class="information-form">
+        <input class="input_form" name="subject_name" type="text" id="subject_name" value="{{subject_to_edit.subject_name}}" >
+        <button class="button_form" type="submit">Edit</button>
+    </form>
+</div>
+
+{% endblock %}

@@ -22,11 +22,11 @@
             <tbody>
                 {% for subject in subjects %}
                 <tr>
-                    <td>{{subject.subject_id}}</td>
+                    <td>{{subject.id}}</td>
                     <td>{{subject.subject_name}}</td>
                     <td>
-                        <button class="list_button edit-btn">Edit</button>
-                        <button class="list_button delete-btn">Delete</button>
+                        <a href="/subject/{{subject.id}}/edit"><button class="list_button edit-btn">Edit</button></a>
+                        <a href="/subject/delete/{{subject.id}}"><button class="list_button delete-btn">Delete</button></a>
                     </td>
                 </tr>
                 {% endfor %}

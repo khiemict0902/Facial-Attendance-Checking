@@ -14,6 +14,7 @@
         <table>
             <thead>
                 <tr>
+                    <th>Class ID</th>
                     <th>Class name</th>
                     <th></th>
                 </tr>
@@ -21,14 +22,19 @@
             <tbody>
                 {% for class in classes %}
                 <tr>
-                    <td>{{class.class_name}}</td>
+                    <td>{{class.id}}</td>
                     <td>
-                        <button class="list_button edit-btn">Edit</button>
-                        <button class="list_button delete-btn">Delete</button>
+                        <a href="/{{class.id}}/student_list" class="student_list_link">
+                            <div>{{class.class_name}}</div>
+                        </a>
+                    </td>
+                    <td>
+                        <a href="/class/{{class.id}}/edit"><button class="list_button edit-btn">Edit</button></a>
+                        <a href="/class/delete/{{class.id}}"><button class="list_button delete-btn">Delete</button></a>
                     </td>
                 </tr>
                 {% endfor %}
             </tbody>
         </table>
-    </div>
+    </div>  
 {% endblock %}

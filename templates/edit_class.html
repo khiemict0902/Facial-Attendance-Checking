@@ -1,0 +1,15 @@
+{% extends 'base.html' %}
+
+{% block head %}
+{% endblock %}
+
+{% block body %}
+    
+<div class="information-container">
+    <h1 class="form_title">Edit Class</h1>
+    <form  action="/class/{{class_to_edit.id}}/edit" method="POST" class="information-form">
+        <input class="input_form" type="text" name="class_name" id="class_name" placeholder="Enter name of class"  value="{{class_to_edit.class_name}}">
+        <button class="button_form" type="submit">Edit</button>
+    </form>        
+</div>
+{% endblock %}
