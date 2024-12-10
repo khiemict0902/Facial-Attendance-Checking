@@ -5,13 +5,12 @@
 {% endblock %}
 
 {% block body %} 
-<div class="add_information-container">
+<div class="information-container">
     <div class="form_title">
-        <h2>{{ subject.subject_id }} - {{subject.subject_name}} </h2><br>
-        <h2>{{ className }}</h2>
+        <h2>{{ classes.class_name }}</h2>
     </div>
     <h1 class="form_title">Add Student </h1>
-    <form action="/" method="POST" class="add_information-form">
+    <form action="/student_list/{{classes.id}}/add_student" method="POST" class="information-form">
         <input class="input_form" type="text" name="student_name" id="student_name" placeholder="Enter student name" required>
         <input class="input_form" type="text" name="student_id" id="student_id" placeholder="Enter student id" required>
         <input class="input_form" type="text" name="date_of_birth" id="date_of_birth" placeholder="Enter date of birth (yyyy/mm/dd)" required>

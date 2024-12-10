@@ -1,0 +1,48 @@
+{% extends 'base.html' %}
+
+{% block head %} 
+
+{% endblock %}
+
+{% block body %} 
+    <div class="list_container">
+        <div class="list_title">
+            <h2>{{classes.class_name}} </h2>
+            <h2>{{subject.subject_name}} </h2>
+        </div>
+        <table>   
+            <thead>
+                <tr>
+                    <th> Student Name</th>
+                    <th> Student ID</th>
+                    <th> Date of birth</th>
+                    {% for attendance_date in attendance_dates %}
+                        <th> Present status <br>{{ attendance_date }}</th>
+                    {% endfor %}
+                    <th> Total present</th>
+                    <th> Total absent</th>
+                </tr>
+            </thead>
+            {% for student in students %}
+            <tr>
+                <td>{{student.student_name}}</td>
+                <td>{{student.student_id}}</td>
+                <td>{{student.date_of_birth}}</td>
+                {% for attendanceRecord in attendanceRecords %}
+                    {% if attendanceRecord.student_id == student.id %}
+                        <td>{{ attendanceRecord.status }}</td>
+                    {% endif %}
+                {% endfor %}
+                {% for attendanceSummary in attendanceSummaries %}
+                    {% if attendanceSummary.student_id == student.id %}
+                        <td>{{attendanceSummary.total_present}}</td>
+                        <td>{{attendanceSummary.total_absent}}</td>
+                    {% endif %}
+                    
+                {% endfor %}
+            </tr>
+            {% endfor %}
+        </table>
+    </div>
+    
+{% endblock %}

@@ -4,221 +4,250 @@ from datetime import datetime
 import psycopg2 
   
 app = Flask(__name__) 
-app.config["SQLALCHEMY_DATABASE_URI"] = "postgresql://postgres:hai2652003@localhost/student_database"
+app.config["SQLALCHEMY_DATABASE_URI"] = "postgresql://postgres:hai2652003@localhost/student_usth"
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False 
 db = SQLAlchemy(app)
 
-class Student(db.Model):
-    __tablename__ = "STUDENT"
-    
-    student_id = db.Column(db.String(255), primary_key=True, unique=True, nullable=False)
-    name = db.Column(db.String(255), nullable=False)
-    date_of_birth = db.Column(db.Date, nullable=False)
-    class_name = db.Column(db.String(255), db.ForeignKey("CLASS.class_name"), nullable=False)
-    
-    faces = db.relationship('Face', backref='student', lazy=True)
-    attendance_records = db.relationship('AttendanceRecord', backref='student', lazy=True)
-    attendance_summaries = db.relationship('AttendanceSummary', backref='student', lazy=True)
-
 class Class(db.Model):
-    __tablename__ = "CLASS"
-    
-    class_id = db.Column(db.Integer, unique=True, autoincrement=True, nullable=False)
-    class_name = db.Column(db.String(255), primary_key=True, nullable=False)
-    
-    students = db.relationship('Student', backref='class', lazy=True)
-    attendance_records = db.relationship('AttendanceRecord', backref='class', lazy=True)
-    attendance_summaries = db.relationship('AttendanceSummary', backref='class', lazy=True)
-    subjects = db.relationship('SubjectClass', backref='class', lazy=True)
+    __tablename__ = 'CLASS'
+    id = db.Column(db.Integer, primary_key=True, autoincrement=True)
+    class_name = db.Column(db.String(255), nullable=False)
+
+    def __repr__(self):
+        return f'<Class {self.class_name}>'
+
+
+class Student(db.Model):
+    __tablename__ = 'STUDENT'
+    id = db.Column(db.Integer, primary_key=True, autoincrement=True)
+    student_id = db.Column(db.String(255), nullable=False, unique=True)
+    student_name = db.Column(db.String(255), nullable=False)
+    date_of_birth = db.Column(db.Date, nullable=False)
+    class_id = db.Column(db.Integer, db.ForeignKey('CLASS.id'), nullable=False)
+
+    # Relationships
+    class_ = db.relationship('Class', backref=db.backref('students', lazy=True))
+
+    def __repr__(self):
+        return f'<Student {self.student_name}>'
+
 
 class Subject(db.Model):
-    __tablename__ = "SUBJECT"
-    
-    subject_id = db.Column(db.String(255), primary_key=True, unique=True, nullable=False)
+    __tablename__ = 'SUBJECT'
+    id = db.Column(db.Integer, primary_key=True, autoincrement=True)
     subject_name = db.Column(db.String(255), nullable=False)
-    
-    attendance_records = db.relationship('AttendanceRecord', backref='subject', lazy=True)
-    attendance_summaries = db.relationship('AttendanceSummary', backref='subject', lazy=True)
-    classes = db.relationship('SubjectClass', backref='subject', lazy=True)
+
+    def __repr__(self):
+        return f'<Subject {self.subject_name}>'
+
 
 class Face(db.Model):
-    __tablename__ = "FACE"
-    
-    face_id = db.Column(db.Integer, primary_key=True, autoincrement=True)
-    student_id = db.Column(db.String(255), db.ForeignKey("STUDENT.student_id"), nullable=False)
+    __tablename__ = 'FACE'
+    id = db.Column(db.Integer, primary_key=True, autoincrement=True)
+    student_id = db.Column(db.Integer, db.ForeignKey('STUDENT.id'), nullable=False)
     url = db.Column(db.Text, nullable=False)
 
+    # Relationships
+    student = db.relationship('Student', backref=db.backref('faces', lazy=True))
+
+    def __repr__(self):
+        return f'<Face {self.url}>'
+
+
 class AttendanceRecord(db.Model):
-    __tablename__ = "ATTENDANCE_RECORD"
-    
-    attendance_record_id = db.Column(db.Integer, primary_key=True, autoincrement=True)
-    class_name = db.Column(db.String(255), db.ForeignKey("CLASS.class_name"), nullable=False)
-    subject_id = db.Column(db.String(255), db.ForeignKey("SUBJECT.subject_id"), nullable=False)
-    student_id = db.Column(db.String(255), db.ForeignKey("STUDENT.student_id"), nullable=False)
+    __tablename__ = 'ATTENDANCE_RECORD'
+    id = db.Column(db.Integer, primary_key=True, autoincrement=True)
+    student_id = db.Column(db.Integer, db.ForeignKey('STUDENT.id'), nullable=False)
+    class_id = db.Column(db.Integer, db.ForeignKey('CLASS.id'), nullable=False)
+    subject_id = db.Column(db.Integer, db.ForeignKey('SUBJECT.id'), nullable=False)
     date = db.Column(db.Date, nullable=False)
     status = db.Column(db.String(255), nullable=False)
-    def __init__(self, student_id, subject_id, class_name ,date ,status ):
-        self.student_id = student_id
-        self.subject_id = subject_id
-        self.class_name = class_name
-        self.date = date
-        self.status = status
+
+    # Relationships
+    student = db.relationship('Student', backref=db.backref('attendance_records', lazy=True))
+    class_ = db.relationship('Class', backref=db.backref('attendance_records', lazy=True))
+    subject = db.relationship('Subject', backref=db.backref('attendance_records', lazy=True))
+
+    def __repr__(self):
+        return f'<AttendanceRecord {self.student_id} {self.status}>'
+
 
 class AttendanceSummary(db.Model):
-    __tablename__ = "ATTENDANCE_SUMMARY"
-    
-    attendance_summary_id = db.Column(db.Integer, primary_key=True, autoincrement=True)
-    class_name = db.Column(db.String(255), db.ForeignKey("CLASS.class_name"), nullable=False)
-    subject_id = db.Column(db.String(255), db.ForeignKey("SUBJECT.subject_id"), nullable=False)
-    student_id = db.Column(db.String(255), db.ForeignKey("STUDENT.student_id"), nullable=False)
+    __tablename__ = 'ATTENDANCE_SUMMARY'
+    id = db.Column(db.Integer, primary_key=True, autoincrement=True)
+    class_id = db.Column(db.Integer, db.ForeignKey('CLASS.id'), nullable=False)
+    subject_id = db.Column(db.Integer, db.ForeignKey('SUBJECT.id'), nullable=False)
+    student_id = db.Column(db.Integer, db.ForeignKey('STUDENT.id'), nullable=False)
     total_absent = db.Column(db.Integer, nullable=False)
     total_present = db.Column(db.Integer, nullable=False)
 
+    # Relationships
+    class_ = db.relationship('Class', backref=db.backref('attendance_summaries', lazy=True))
+    subject = db.relationship('Subject', backref=db.backref('attendance_summaries', lazy=True))
+    student = db.relationship('Student', backref=db.backref('attendance_summaries', lazy=True))
+
+    def __repr__(self):
+        return f'<AttendanceSummary {self.student_id}>'
+
+
 class SubjectClass(db.Model):
-    __tablename__ = 'subject_class'
+    __tablename__ = 'SUBJECT_CLASS'
+    class_id = db.Column(db.Integer, db.ForeignKey('CLASS.id'), primary_key=True)
+    subject_id = db.Column(db.Integer, db.ForeignKey('SUBJECT.id'), primary_key=True)
 
-    class_name = db.Column(db.String(255), db.ForeignKey('CLASS.class_name'), primary_key=True, nullable=False)
-    subject_id = db.Column(db.String(255), db.ForeignKey('SUBJECT.subject_id'), primary_key=True, nullable=False)
+    # Relationships
+    class_ = db.relationship('Class', backref=db.backref('subject_classes', lazy=True))
+    subject = db.relationship('Subject', backref=db.backref('subject_classes', lazy=True))
 
-    class_rel = db.relationship('Class', back_populates='subjects')
-    subject_rel = db.relationship('Subject', back_populates='classes')
+    def __repr__(self):
+        return f'<SubjectClass {self.class_id} {self.subject_id}>'
 
 
 #subjects and classes of subjects
 @app.route('/')
 def home():
+    classes = Class.query.all()
     subjects = Subject.query.all()
     subjectClasses = SubjectClass.query.all()
-    return render_template('home.html', subjects = subjects, subjectClasses = subjectClasses)
+    return render_template('home.html', subjects = subjects, subjectClasses = subjectClasses, classes=classes)
 
 #subject list
 @app.route('/subject')
 def subject():
-    subjects = Subject.query.all()
+    subjects = Subject.query.order_by(Subject.id).all()
     return render_template('subject_list.html', subjects = subjects)
 
-#update subject
-# @app.route('/subject/<subject_id/edit') 
-# def update(id):
-#     task = Todo.query.get_or_404(id)
+#edit subject
+@app.route('/subject/<id>/edit', methods=['GET', 'POST']) 
+def update_subject(id):
+    subject_to_edit = Subject.query.get_or_404(id)
 
-#     if request.method == 'POST':
-#         task.content = request.form['content']
+    if request.method == 'POST':
+        subject_to_edit.subject_name = request.form['subject_name']
 
-#         try:
-#             db.session.commit()
-#             return redirect('/')
-#         except:
-#             return 'There was an issue updating your task'
+        try:
+            db.session.commit()
+            return redirect('/subject')
+        except:
+            return 'There was an issue updating your task'
 
-#     else:
-#         return render_template('update.html', task=task)
+    else:
+        return render_template('edit_subject.html', subject_to_edit=subject_to_edit)
 
-#delete
-# @app.route('/subject/delete/<id>')
-# def delete(subject_id):
-#     subject_to_delete = Subject.query.get_or_404(id)
+#delete subject
+@app.route('/subject/delete/<id>')
+def delete_subject(id):
+    subject_to_delete = Subject.query.get_or_404(id)
 
-#     try:
-#         db.session.delete(subject_to_delete)
-#         db.session.commit()
-#         return redirect('/')
-#     except:
-#         return 'There was a problem deleting that task'
+    try:
+        db.session.delete(subject_to_delete)
+        db.session.commit()
+        return redirect('/subject')
+    except:
+        return 'There was a problem deleting that subject'
 
 
 #class list
 @app.route('/class')
 def classes():
-    classes = Class.query.all()
+    classes = Class.query.order_by(Class.id).all()
     return render_template('class_list.html', classes = classes)
 
-#delete class
-# @app.route('/subject/<class_name/edit') 
-# def delete(class_name):
-#     task_to_delete = Todo.query.get_or_404(id)
-
-#     try:
-#         db.session.delete(task_to_delete)
-#         db.session.commit()
-#         return redirect('/')
-#     except:
-#         return 'There was a problem deleting that task'
-
 #edit class
-# @app.route('/subject/delete/<class_name>')
-# def update(id):
-#     task = Todo.query.get_or_404(id)
+@app.route('/class/<id>/edit', methods=['GET', 'POST'])     
+def update_class(id):
+    class_to_edit = Class.query.get_or_404(id)
 
-#     if request.method == 'POST':
-#         task.content = request.form['content']
+    if request.method == 'POST':
+        class_to_edit.class_name = request.form['class_name']
 
-#         try:
-#             db.session.commit()
-#             return redirect('/')
-#         except:
-#             return 'There was an issue updating your task'
+        try:
+            db.session.commit()
+            return redirect('/class')
+        except:
+            return 'There was an issue updating your task'
 
-#     else:
-#         return render_template('update.html', task=task)
+    else:
+        return render_template('edit_class.html', class_to_edit=class_to_edit)
 
+#delete class
+@app.route('/class/delete/<id>')
+def delete_class(id):
+    class_to_delete = Class.query.get_or_404(id)
 
+    try:
+        db.session.delete(class_to_delete)
+        db.session.commit()
+        return redirect('/class')
+    except:
+        return 'There was a problem deleting that subject'
+    
 #student list of a class
-@app.route('/student_list/<subject_id>/<class_name>')
-def student_list(subject_id, class_name):
+@app.route('/<int:class_id>/student_list')
+def class_student_list(class_id):
+    classes = Class.query.filter_by(id = class_id).first()
+    students = Student.query.filter_by(class_id = class_id).order_by(Student.id).all()
+    return render_template('class_student_list.html', students = students, classes = classes)
 
-    subject = Subject.query.filter_by(subject_id=subject_id).first()
-    students = Student.query.filter_by(class_name = class_name).all()
+#student list of a class in a subject
+@app.route('/<int:subject_id>/<int:class_id>/student_list')
+def subject_student_list(subject_id, class_id):
+
+    classes = Class.query.filter_by(id = class_id).first()
+    subject = Subject.query.filter_by(id = subject_id).first()
+    students = Student.query.filter_by(class_id = class_id).order_by(Student.id).all()
     attendance_dates = db.session.query(AttendanceRecord.date).distinct().order_by(AttendanceRecord.date).all()
-    attendanceRecords = AttendanceRecord.query.filter_by(subject_id = subject_id, class_name = class_name).all()
-    attendanceSummaries = AttendanceSummary.query.filter_by(subject_id = subject_id, class_name = class_name).all()
-    return render_template('student_list.html', students = students, subject = subject, attendanceRecords =attendanceRecords, attendanceSummaries = attendanceSummaries, attendance_dates = attendance_dates, className = class_name)
-
-#delete student
-# @app.route('/subject/<student_id>/edit') 
-# def delete(student_id):
-#     task_to_delete = Todo.query.get_or_404(id)
-
-#     try:
-#         db.session.delete(task_to_delete)
-#         db.session.commit()
-#         return redirect('/')
-#     except:
-#         return 'There was a problem deleting that task'
+    attendanceRecords = AttendanceRecord.query.filter_by(subject_id = subject_id, class_id = class_id).all()
+    attendanceSummaries = AttendanceSummary.query.filter_by(subject_id = subject_id, class_id = class_id).all()
+    return render_template('subject_student_list.html', students = students, subject = subject, attendanceRecords =attendanceRecords, attendanceSummaries = attendanceSummaries, attendance_dates = attendance_dates, classes = classes)
 
 #edit student
-# @app.route('/subject/delete/<student_id>')
-# def update(id):
-#     task = Todo.query.get_or_404(id)
+@app.route('/student/<id>/edit', methods=['GET', 'POST']) 
+def update_student(id):
+    student_to_edit = Student.query.get_or_404(id)
 
-#     if request.method == 'POST':
-#         task.content = request.form['content']
+    if request.method == 'POST':
+        student_to_edit.student_id = request.form['student_id']
+        student_to_edit.student_name = request.form['student_name']
+        student_to_edit.date_of_birth = request.form['date_of_birth']
 
-#         try:
-#             db.session.commit()
-#             return redirect('/')
-#         except:
-#             return 'There was an issue updating your task'
+        try:
+            db.session.commit()
+            return redirect('/student')
+        except:
+            return 'There was an issue updating your task'
 
-#     else:
-#         return render_template('update.html', task=task)
+    else:
+        return render_template('edit_student.html', student_to_edit=student_to_edit)
 
+#delete student
+@app.route('/student/delete/<id>')
+def delete_student(id):
+    student_to_delete = Student.query.get_or_404(id)
+
+    try:
+        AttendanceRecord.query.filter_by(id=id).delete()
+        Face.query.filter_by(id=id).delete()
+        db.session.delete(student_to_delete)
+        db.session.commit()
+        return redirect('/student')
+    except:
+        return 'There was a problem deleting that subject'
 
 
 #add subject
 @app.route('/subject/add_subject', methods = ['POST', 'GET'])  
 def add_subject():
     if request.method == 'POST':
-        subject_id = request.form['subject_id']
         subject_name = request.form['subject_name']
-        new_subject = Subject(subject_id, subject_name)
+        new_subject = Subject(subject_name=subject_name) 
 
         try:
             db.session.add(new_subject)
             db.session.commit()
-            return redirect('/subject/add_subject')
+            return redirect('/subject')
         except:
-            return redirect('/subject/add_subject')
+            return 'There was an issue adding subject'
 
     else:
         return render_template('add_subject.html')
@@ -228,39 +257,39 @@ def add_subject():
 def add_class():
     if request.method == 'POST':
         class_name = request.form['class_name']
-        new_class = Class(class_name)
+        new_class = Class(class_name=class_name)
 
         try:
             db.session.add(new_class)
-            db.session.commit()
-            return redirect('/class/add_class')
+            db.session.commit() 
+            return redirect('/class')
         except:
-            return redirect('/class/add_class')
+            return 'There was an issue adding class'
 
     else:
         return render_template('add_class.html')
 
 
 #add student
-@app.route('/student_list/<subject_id>/<class_name>/add_student', methods = ['POST', 'GET'])
-def add_student(subject_id, class_name):
+@app.route('/student_list/<class_id>/add_student', methods = ['POST', 'GET'])
+def add_student(class_id):
     if request.method == 'POST':
         student_id = request.form['student_id']
         student_name = request.form['student_name']
         date_of_birth = request.form['date_of_birth']
-        class_name = class_name
-        new_student = Student(student_id, student_name, date_of_birth, class_name)
+        class_id = class_id
+        new_student = Student(student_id = student_id, student_name = student_name, date_of_birth = date_of_birth, class_id =class_id)
 
         try:
             db.session.add(new_student)
             db.session.commit()
-            return redirect('/student_list/<subject_id>/<class_name>/add_student')
+            return redirect('/student_list/<class_id>')
         except:
-            return redirect('/student_list/<subject_id>/<class_name>/add_student')
+            return 'There was an issue adding student'
 
     else:
-        subject = Subject.query.filter_by(subject_id=subject_id).first()
-        return render_template('add_student.html', subject = subject, className = class_name)
+        classes = Class.query.filter_by(id=class_id).first()
+        return render_template('add_student.html', classes = classes)
     
 
 #check attendance
@@ -277,25 +306,25 @@ def get_attendance_status(student_id):
 
     # Query attendance records và tên môn học
     query = db.session.query(
-        AttendanceRecord.attendance_record_id,
-        AttendanceRecord.class_name,
+        AttendanceRecord.id,
+        AttendanceRecord.class_id,
         AttendanceRecord.student_id,
         AttendanceRecord.subject_id,
         Subject.subject_name,
         AttendanceRecord.date,
         AttendanceRecord.status
-    ).join(Subject, AttendanceRecord.subject_id == Subject.subject_id).filter(
+    ).join(Subject, AttendanceRecord.subject_id == Subject.id).filter(
         AttendanceRecord.student_id == student_id
     )
 
     attendance_records = query.all()
     if not attendance_records:
-        return jsonify({"student_name": student.name, "message": "No attendance records found for student."}), 404
+        return jsonify({"student_name": student.student_name, "message": "No attendance records found for student."}), 404
 
     records = []
     for record in attendance_records:
         records.append({
-            "attendance_record_id": record.attendance_record_id,
+            "attendance_record_id": record.id,
             "class_name": record.class_name,
             "student_id": record.student_id,
             "subject_id": record.subject_id,
@@ -304,7 +333,7 @@ def get_attendance_status(student_id):
             "status": record.status
         })
 
-    return jsonify({"student_name": student.name, "attendance_records": records})
+    return jsonify({"student_name": student.student_name, "attendance_records": records})
 
 
 #api

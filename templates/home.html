@@ -14,23 +14,23 @@
             
             <div class="subject_class-list">
                 {% for subject in subjects %}
-                <div class="subject_class-item">
-                    <div class="subject">
-                        <h3>{{subject.subject_id}} - {{ subject.subject_name }}</h3>
+                    <div class="subject_class-item">
+                        <div class="subject_item">
+                            <h3>{{ subject.subject_name }}</h3>
+                        </div>
+                        <div class="class-list">
+                            {% for subjectClass in subjectClasses if subjectClass.subject_id == subject.id %}
+                                {% for class in classes if class.id == subjectClass.class_id %}
+                                    <div class="class-item">
+                                        <h3>
+                                            <a href="./{{ subject.id }}/{{ class.id }}/student_list">{{ class.class_name }}</a>
+                                        </h3>
+                                    </div>
+                                {% endfor %}
+                            {% endfor %}
+                        </div>
                     </div>
-                    <div class="class-list">
-                        {% for subjectClass in subjectClasses %}
-                            {% if subjectClass.subject_id == subject.subject_id %}
-                            <div class="class-item">
-                                <h3>
-                                    <a href="./student_list/{{subject.subject_id}}/{{subjectClass.class_name}}">{{subjectClass.class_name}}</a>
-                                </h3>
-                            </div>
-                            {% endif %}    
-                        {% endfor %}
-                    </div>
-                </div>
-                {%  endfor %}
+                {% endfor %}
             </div>
         </div>
     </div>
