@@ -17,8 +17,8 @@
                         <th> Student Name</th>
                         <th> Student ID</th>
                         <th> Date of birth</th>
-                        {% for attendance_date in attendance_dates %}
-                            <th> Present status <br>{{ attendance_date }}</th>
+                        {% for date in dates %}
+                            <th>{{ date }}</th>
                         {% endfor %}
                         <th> Total present</th>
                         <th> Total absent</th>

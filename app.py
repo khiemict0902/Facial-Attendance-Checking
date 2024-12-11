@@ -323,9 +323,10 @@ def subject_student_list(subject_id, class_id):
     subject = Subject.query.filter_by(id = subject_id).first()
     students = Student.query.filter_by(class_id = class_id).order_by(Student.id).all()
     attendance_dates = db.session.query(AttendanceRecord.date).distinct().order_by(AttendanceRecord.date).all()
+    dates = [date[0] for date in attendance_dates]
     attendanceRecords = AttendanceRecord.query.filter_by(subject_id = subject_id, class_id = class_id).all()
     attendanceSummaries = AttendanceSummary.query.filter_by(subject_id = subject_id, class_id = class_id).all()
-    return render_template('subject_student_list.html', students = students, subject = subject, attendanceRecords =attendanceRecords, attendanceSummaries = attendanceSummaries, attendance_dates = attendance_dates, classes = classes)
+    return render_template('subject_student_list.html', students = students, subject = subject, attendanceRecords =attendanceRecords, attendanceSummaries = attendanceSummaries, dates = dates, classes = classes)
 
 
 #check attendance
