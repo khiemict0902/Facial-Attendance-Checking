@@ -16,7 +16,7 @@
                 {% for subject in subjects %}
                     <div class="subject_class-item">
                         <div class="subject_item">
-                            <h3>{{ subject.subject_name }}</h3>
+                                <h3>{{ subject.subject_name }}</h3>
                         </div>
                         <div class="class-list">
                             {% for subjectClass in subjectClasses if subjectClass.subject_id == subject.id %}

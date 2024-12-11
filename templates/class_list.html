@@ -14,7 +14,6 @@
         <table>
             <thead>
                 <tr>
-                    <th>Class ID</th>
                     <th>Class name</th>
                     <th></th>
                 </tr>
@@ -22,7 +21,6 @@
             <tbody>
                 {% for class in classes %}
                 <tr>
-                    <td>{{class.id}}</td>
                     <td>
                         <a href="/{{class.id}}/student_list" class="student_list_link">
                             <div>{{class.class_name}}</div>

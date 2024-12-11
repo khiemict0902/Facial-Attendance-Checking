@@ -6,7 +6,7 @@
 {% block body %}
 <div class="information-container">
     <h1 class="form_title">Edit Student </h1>
-    <form  action="/student/{{student_to_edit.id}}/edit" method="POST" class="information-form">
+    <form  action="/{{class_id}}/student_list/{{student_to_edit.id}}/edit" method="POST" class="information-form">
         <input class="input_form" type="text" name="student_name" id="student_name" placeholder="Enter student name"value="{{student_to_edit.student_name}}">
         <input class="input_form" type="text" name="student_id" id="student_id" placeholder="Enter student id"value="{{student_to_edit.student_id}}">
         <input class="input_form" type="text" name="date_of_birth" id="date_of_birth" placeholder="Enter date of birth (yyyy/mm/dd)"value="{{student_to_edit.date_of_birth}}">
