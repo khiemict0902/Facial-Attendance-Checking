@@ -364,7 +364,6 @@ def get_attendance_status(student_id):
             "attendance_record_id": record.id,
             "class_name": record.class_name,
             "student_id": record.student_id,
-            "subject_id": record.subject_id,
             "subject_name": record.subject_name,
             "date": record.date.strftime('%Y-%m-%d'),
             "status": record.status

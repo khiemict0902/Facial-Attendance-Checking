@@ -45,11 +45,10 @@
 
                     // Hiển thị bảng kết quả
                     let html = '<table class="table table-bordered">';
-                    html += '<thead><tr><th>Class Name</th><th>Subject ID</th><th>Subject Name</th><th>Status</th><th>Date</th></tr></thead><tbody>';
+                    html += '<thead><tr><th>Class Name</th><th>Subject Name</th><th>Status</th><th>Date</th></tr></thead><tbody>';
                     data.attendance_records.forEach(record => {
                         html += `<tr>
                             <td>${record.class_name}</td>
-                            <td>${record.subject_id}</td>
                             <td>${record.subject_name}</td>
                             <td>${record.status}</td>
                             <td>${record.date}</td>
