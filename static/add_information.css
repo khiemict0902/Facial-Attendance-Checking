@@ -22,7 +22,7 @@
     padding: 10px;
     border-radius: 4px;
     width: 100%;
-    margin-bottom: 16px;
+    margin: 12px 0;
 }
     
 .button_form {
@@ -33,4 +33,7 @@
     border-radius: 4px;
 }
 
-
+.linked_class-item {
+    margin: 12px 0;
+    width: 100%;
+}

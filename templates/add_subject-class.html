@@ -1,0 +1,35 @@
+{% extends 'base.html' %}
+
+{% block head %} 
+
+{% endblock %}
+
+{% block body %} 
+    
+    <div class="information-container">
+        <div class="form_title">
+            <h2>{{ subject.subject_name }}</h2>
+            <h2>Add Class</h2>
+        </div>
+        <h3> Linked class </h3>
+        <div class="linked_class-list">
+            {% for linked_class in linked_classes %}
+                <div class="linked_class-item">
+                    {{ linked_class.class_name }}
+                    <a href="/{{subject.id}}/delete/{{linked_class.id}}"><button class="list_button delete-btn">Delete</button></a>
+                </div>
+            {% endfor %}
+        </div>
+
+        <h3> Unlinked class </h3>
+        <form action="/subject/{{subject.id}}/add_class" method="POST" class="information-form">
+            <select class="input_form" name="class_id" id="class">
+            {% for unlinked_class in unlinked_classes %}
+                <option value="{{ unlinked_class.id }}"> {{ unlinked_class.class_name }} </option>
+            {% endfor %}
+            </select>
+            <button class="button_form" type="submit">Add</button> 
+        </form>        
+    </div>
+
+{% endblock %}

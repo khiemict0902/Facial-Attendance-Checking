@@ -7,7 +7,7 @@
 {% block body %} 
     <div class="list_container">
         <div class="toolbar">
-            <button class="list_button add-btn"><a href="/student_list/{{classes.id}}/add_student">Add Student</a></button>
+            <button class="list_button add-btn"><a href="/{{classes.id}}/student_list/add_student">Add Student</a></button>
             <input type="text" class="search-input" placeholder="Search">
         </div>
         <div class="list_title">
@@ -28,12 +28,12 @@
                 <td>{{student.student_id}}</td>
                 <td>{{student.date_of_birth}}</td>
                 <td>
-                    <a href="/student/{{student.id}}/edit"><button class="list_button edit-btn">Edit</button></a>
-                    <a href="/student/delete/{{student.id}}"><button class="list_button delete-btn">Delete</button></a>
+                    <a href="/{{classes.id}}/student_list/{{student.id}}/edit"><button class="list_button edit-btn">Edit</button></a>
+                    <a href="/{{classes.id}}/student_list/delete/{{student.id}}"><button class="list_button delete-btn">Delete</button></a>
                 </td>
             </tr>
             {% endfor %}
         </table>
     </div>
     
-{% endblock %}
+{% endblock %}  

@@ -14,17 +14,28 @@
         <table>
             <thead>
                 <tr>
-                    <th>Subject ID</th>
                     <th>Subject Name</th>
+                    <th>Classes</th>
                     <th></th>
                 </tr>
             </thead>
             <tbody>
                 {% for subject in subjects %}
                 <tr>
-                    <td>{{subject.id}}</td>
                     <td>{{subject.subject_name}}</td>
+                    <div class="class-list">
                     <td>
+                        {% for subjectClass in subjectClasses if subjectClass.subject_id == subject.id %}
+                            {% for class in classes if class.id == subjectClass.class_id %}
+                                <div class="class-item">
+                                    <a href="./{{ subject.id }}/{{ class.id }}/student_list">{{ class.class_name }}</a>
+                                </div>
+                            {% endfor %}
+                        {% endfor %}
+                        </div>
+                    </td>
+                    <td>
+                        <a href="/subject/{{subject.id}}/add_class"><button class="list_button edit-btn">Add CLass</button></a>
                         <a href="/subject/{{subject.id}}/edit"><button class="list_button edit-btn">Edit</button></a>
                         <a href="/subject/delete/{{subject.id}}"><button class="list_button delete-btn">Delete</button></a>
                     </td>

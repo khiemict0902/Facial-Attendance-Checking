@@ -114,7 +114,40 @@ INSERT INTO "SUBJECT_CLASS" ("class_id", "subject_id") VALUES
 ('2', '1'),
 ('2', '2');
 
+CREATE OR REPLACE FUNCTION create_attendance_summary_for_new_student()
+RETURNS TRIGGER AS $$
+BEGIN
+    -- Insert initial attendance summary records for the new student
+    INSERT INTO "ATTENDANCE_SUMMARY" ("class_id", "subject_id", "student_id", "total_present", "total_absent")
+    SELECT DISTINCT
+        NEW.class_id,
+        "SUBJECT_CLASS"."subject_id",
+        NEW.id,
+        0, -- Total present is 0 for a new student
+        0  -- Total absent is 0 for a new student
+    FROM "SUBJECT_CLASS"
+    WHERE "SUBJECT_CLASS"."class_id" = NEW.class_id;
 
+    -- Insert empty attendance records for all existing attendance sessions
+    INSERT INTO "ATTENDANCE_RECORD" ("class_id", "subject_id", "student_id", "date", "status")
+    SELECT DISTINCT
+        "ATTENDANCE_RECORD"."class_id",
+        "ATTENDANCE_RECORD"."subject_id",
+        NEW.id,
+        "ATTENDANCE_RECORD"."date",
+        '' -- Status is an empty string for a new student
+    FROM "ATTENDANCE_RECORD"
+    WHERE "ATTENDANCE_RECORD"."class_id" = NEW.class_id;
+
+    RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+
+-- Trigger to invoke the function after a new student is added
+CREATE TRIGGER trigger_create_attendance_summary_for_new_student
+AFTER INSERT ON "STUDENT"
+FOR EACH ROW
+EXECUTE FUNCTION create_attendance_summary_for_new_student();
 
 CREATE OR REPLACE FUNCTION update_attendance_summary()
 RETURNS TRIGGER AS $$

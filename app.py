@@ -1,5 +1,6 @@
 from flask import Flask, render_template, request, redirect, url_for , jsonify
 from flask_sqlalchemy import SQLAlchemy
+from sqlalchemy import not_
 from datetime import datetime
 import psycopg2 
   
@@ -104,18 +105,69 @@ class SubjectClass(db.Model):
 
 
 #subjects and classes of subjects
-@app.route('/')
-def home():
-    classes = Class.query.all()
-    subjects = Subject.query.all()
-    subjectClasses = SubjectClass.query.all()
-    return render_template('home.html', subjects = subjects, subjectClasses = subjectClasses, classes=classes)
+# @app.route('/')
+# def home():
+#     classes = Class.query.all()
+#     subjects = Subject.query.all()
+#     subjectClasses = SubjectClass.query.all()
+#     return render_template('home.html', subjects = subjects, subjectClasses = subjectClasses, classes=classes)
 
 #subject list
-@app.route('/subject')
+@app.route('/')
 def subject():
+    classes = Class.query.all()
     subjects = Subject.query.order_by(Subject.id).all()
-    return render_template('subject_list.html', subjects = subjects)
+    subjectClasses = SubjectClass.query.all()
+    return render_template('subject_list.html', subjects = subjects,subjectClasses = subjectClasses, classes=classes)
+
+#add subject
+@app.route('/subject/add_subject', methods = ['POST', 'GET'])  
+def add_subject():
+    if request.method == 'POST':
+        subject_name = request.form['subject_name']
+        new_subject = Subject(subject_name=subject_name) 
+
+        try:
+            db.session.add(new_subject)
+            db.session.commit()
+            return redirect('/')
+        except:
+            return 'There was an issue adding subject'
+
+    else:
+        return render_template('add_subject.html')
+    
+#add subject_class
+@app.route('/subject/<int:subject_id>/add_class', methods=['POST', 'GET'])
+def add_subject_class(subject_id):
+    if request.method == 'POST':
+        class_id = request.form.get('class_id')
+        new_subject_class = SubjectClass(subject_id=subject_id, class_id=class_id)
+        try:
+            db.session.add(new_subject_class)
+            db.session.commit() 
+            return redirect('/')
+        except:
+            return 'There was an issue adding class'
+
+    else:
+        subjectClasses = SubjectClass.query.filter_by(subject_id=subject_id).all()
+        subject = Subject.query.filter_by(id=subject_id).first()
+        linked_class_ids = [sc.class_id for sc in subjectClasses]
+        unlinked_classes = Class.query.filter(not_(Class.id.in_(linked_class_ids))).order_by(Class.id).all()
+        linked_classes = Class.query.filter((Class.id.in_(linked_class_ids))).order_by(Class.id).all()
+        return render_template('add_subject-class.html', subject=subject, unlinked_classes=unlinked_classes, linked_classes=linked_classes)
+
+@app.route('/<int:subject_id>/delete/<int:id>')
+def delete_subject_class(subject_id, id):
+    class_to_delete = SubjectClass.query.filter_by(subject_id=subject_id, class_id=id).first()
+
+    try:
+        db.session.delete(class_to_delete)
+        db.session.commit()
+        return redirect('/')
+    except:
+        return 'There was a problem deleting that subject'
 
 #edit subject
 @app.route('/subject/<id>/edit', methods=['GET', 'POST']) 
@@ -127,7 +179,7 @@ def update_subject(id):
 
         try:
             db.session.commit()
-            return redirect('/subject')
+            return redirect('/')
         except:
             return 'There was an issue updating your task'
 
@@ -142,7 +194,7 @@ def delete_subject(id):
     try:
         db.session.delete(subject_to_delete)
         db.session.commit()
-        return redirect('/subject')
+        return redirect('/')
     except:
         return 'There was a problem deleting that subject'
 
@@ -152,6 +204,23 @@ def delete_subject(id):
 def classes():
     classes = Class.query.order_by(Class.id).all()
     return render_template('class_list.html', classes = classes)
+
+#add class
+@app.route('/class/add_class', methods = ['POST', 'GET'])
+def add_class():
+    if request.method == 'POST':
+        class_name = request.form['class_name']
+        new_class = Class(class_name=class_name)
+
+        try:
+            db.session.add(new_class)
+            db.session.commit() 
+            return redirect('/class')
+        except:
+            return 'There was an issue adding class'
+
+    else:
+        return render_template('add_class.html')
 
 #edit class
 @app.route('/class/<id>/edit', methods=['GET', 'POST'])     
@@ -189,6 +258,63 @@ def class_student_list(class_id):
     students = Student.query.filter_by(class_id = class_id).order_by(Student.id).all()
     return render_template('class_student_list.html', students = students, classes = classes)
 
+#add student
+@app.route('/<class_id>/student_list/add_student', methods = ['POST', 'GET'])
+def add_student(class_id):
+    if request.method == 'POST':
+        student_id = request.form['student_id']
+        student_name = request.form['student_name']
+        date_of_birth = request.form['date_of_birth']
+        class_id = class_id
+        new_student = Student(student_id = student_id, student_name = student_name, date_of_birth = date_of_birth, class_id =class_id)
+
+        try:
+            db.session.add(new_student)
+            db.session.commit()
+            return redirect(f'/{class_id}/student_list')
+        except:
+            return 'There was an issue adding student'
+
+    else:
+        classes = Class.query.filter_by(id=class_id).first()
+        return render_template('add_student.html', classes = classes)
+    
+
+#edit student
+@app.route('/<class_id>/student_list/<id>/edit', methods=['GET', 'POST']) 
+def update_student(class_id, id):
+    student_to_edit = Student.query.get_or_404(id)
+
+    if request.method == 'POST':
+        student_to_edit.student_id = request.form['student_id']
+        student_to_edit.student_name = request.form['student_name']
+        student_to_edit.date_of_birth = request.form['date_of_birth']
+
+        try:
+            db.session.commit()
+            return redirect(f'/{class_id}/student_list')
+        except:
+            return 'There was an issue updating your task'
+
+    else:
+        return render_template('edit_student.html', student_to_edit=student_to_edit, class_id=class_id)
+
+#delete student
+@app.route('/<int:class_id>/student_list/delete/<id>')
+def delete_student(class_id, id):
+    student_to_delete = Student.query.get_or_404(id)
+
+    try:
+        AttendanceSummary.query.filter_by(student_id=id).delete()
+        AttendanceRecord.query.filter_by(student_id=id).delete()
+        Face.query.filter_by(student_id=id).delete()
+        db.session.delete(student_to_delete)
+        db.session.commit()
+        return redirect(f'/{class_id}/student_list')
+    except:
+        return 'There was a problem deleting that subject'
+
+
 #student list of a class in a subject
 @app.route('/<int:subject_id>/<int:class_id>/student_list')
 def subject_student_list(subject_id, class_id):
@@ -201,96 +327,6 @@ def subject_student_list(subject_id, class_id):
     attendanceSummaries = AttendanceSummary.query.filter_by(subject_id = subject_id, class_id = class_id).all()
     return render_template('subject_student_list.html', students = students, subject = subject, attendanceRecords =attendanceRecords, attendanceSummaries = attendanceSummaries, attendance_dates = attendance_dates, classes = classes)
 
-#edit student
-@app.route('/student/<id>/edit', methods=['GET', 'POST']) 
-def update_student(id):
-    student_to_edit = Student.query.get_or_404(id)
-
-    if request.method == 'POST':
-        student_to_edit.student_id = request.form['student_id']
-        student_to_edit.student_name = request.form['student_name']
-        student_to_edit.date_of_birth = request.form['date_of_birth']
-
-        try:
-            db.session.commit()
-            return redirect('/student')
-        except:
-            return 'There was an issue updating your task'
-
-    else:
-        return render_template('edit_student.html', student_to_edit=student_to_edit)
-
-#delete student
-@app.route('/student/delete/<id>')
-def delete_student(id):
-    student_to_delete = Student.query.get_or_404(id)
-
-    try:
-        AttendanceRecord.query.filter_by(id=id).delete()
-        Face.query.filter_by(id=id).delete()
-        db.session.delete(student_to_delete)
-        db.session.commit()
-        return redirect('/student')
-    except:
-        return 'There was a problem deleting that subject'
-
-
-#add subject
-@app.route('/subject/add_subject', methods = ['POST', 'GET'])  
-def add_subject():
-    if request.method == 'POST':
-        subject_name = request.form['subject_name']
-        new_subject = Subject(subject_name=subject_name) 
-
-        try:
-            db.session.add(new_subject)
-            db.session.commit()
-            return redirect('/subject')
-        except:
-            return 'There was an issue adding subject'
-
-    else:
-        return render_template('add_subject.html')
-    
-#add class
-@app.route('/class/add_class', methods = ['POST', 'GET'])
-def add_class():
-    if request.method == 'POST':
-        class_name = request.form['class_name']
-        new_class = Class(class_name=class_name)
-
-        try:
-            db.session.add(new_class)
-            db.session.commit() 
-            return redirect('/class')
-        except:
-            return 'There was an issue adding class'
-
-    else:
-        return render_template('add_class.html')
-
-
-#add student
-@app.route('/student_list/<class_id>/add_student', methods = ['POST', 'GET'])
-def add_student(class_id):
-    if request.method == 'POST':
-        student_id = request.form['student_id']
-        student_name = request.form['student_name']
-        date_of_birth = request.form['date_of_birth']
-        class_id = class_id
-        new_student = Student(student_id = student_id, student_name = student_name, date_of_birth = date_of_birth, class_id =class_id)
-
-        try:
-            db.session.add(new_student)
-            db.session.commit()
-            return redirect('/student_list/<class_id>')
-        except:
-            return 'There was an issue adding student'
-
-    else:
-        classes = Class.query.filter_by(id=class_id).first()
-        return render_template('add_student.html', classes = classes)
-    
 
 #check attendance
 @app.route('/check_attendance')
@@ -299,28 +335,29 @@ def check_attendance():
 
 @app.route('/status/<student_id>', methods=['GET'])
 def get_attendance_status(student_id):
-    # Lấy thông tin sinh viên
+    # Retrieve student information
     student = Student.query.filter_by(student_id=student_id).first()
     if not student:
         return jsonify({"message": "Student not found."}), 404
 
-    # Query attendance records và tên môn học
+    # Query attendance records with related class and subject information
     query = db.session.query(
         AttendanceRecord.id,
-        AttendanceRecord.class_id,
+        Class.class_name,
         AttendanceRecord.student_id,
         AttendanceRecord.subject_id,
         Subject.subject_name,
         AttendanceRecord.date,
         AttendanceRecord.status
-    ).join(Subject, AttendanceRecord.subject_id == Subject.id).filter(
-        AttendanceRecord.student_id == student_id
-    )
+    ).join(Class, AttendanceRecord.class_id == Class.id) \
+     .join(Subject, AttendanceRecord.subject_id == Subject.id) \
+     .filter(AttendanceRecord.student_id == student.id)
 
     attendance_records = query.all()
     if not attendance_records:
         return jsonify({"student_name": student.student_name, "message": "No attendance records found for student."}), 404
 
+    # Format attendance records
     records = []
     for record in attendance_records:
         records.append({
@@ -334,7 +371,6 @@ def get_attendance_status(student_id):
         })
 
     return jsonify({"student_name": student.student_name, "attendance_records": records})
-
 
 #api
 @app.route('/checking', methods=['POST'])
