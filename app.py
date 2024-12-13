@@ -5,7 +5,7 @@ from datetime import datetime
 import psycopg2 
   
 app = Flask(__name__) 
-app.config["SQLALCHEMY_DATABASE_URI"] = "postgresql://postgres:hai2652003@localhost/student_usth"
+app.config["SQLALCHEMY_DATABASE_URI"] = "postgresql://postgres:password@localhost/student_usth"
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False 
 db = SQLAlchemy(app)
 
@@ -69,6 +69,14 @@ class AttendanceRecord(db.Model):
     class_ = db.relationship('Class', backref=db.backref('attendance_records', lazy=True))
     subject = db.relationship('Subject', backref=db.backref('attendance_records', lazy=True))
 
+    def __init__(self, student_id, subject_id, class_name ,date ,status ):
+        self.student_id = student_id
+        self.subject_id = subject_id
+        self.class_id = class_name
+        self.date = date
+        self.status = status
+
+    
     def __repr__(self):
         return f'<AttendanceRecord {self.student_id} {self.status}>'
 
@@ -392,10 +400,21 @@ def checking():
         return "No student"
 
     s_subject = data.get('subject')
+    sj = Subject.query.filter(Subject.subject_name==s_subject).first()
+    if not sj:
+        return "No subject"
+    
     s_class = data.get('class')
-    date = "2024-01-02"
+    sc = Class.query.filter(Class.class_name==s_class).first()
 
-    new_record = AttendanceRecord(s_id,s_subject,s_class,date,"Present")
+    if not sc:
+        return "No class"
+    
+    dt = str(datetime.now())
+    date = dt[:10:]
+
+    new_record = AttendanceRecord(int(st.id),int(sj.id),int(sc.id),date,"Present")
+    print(new_record.student_id)
     try:
         db.session.add(new_record)
         db.session.commit()
