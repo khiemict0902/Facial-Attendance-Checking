@@ -91,20 +91,6 @@ ADD FOREIGN KEY("subject_id") REFERENCES "SUBJECT"("id")
 	ADD FOREIGN KEY("class_id") REFERENCES "CLASS"("id")
 	ON UPDATE NO ACTION ON DELETE NO ACTION;
 
-INSERT INTO "CLASS" ("class_name") VALUES
-('ICT Class 1'),
-
-INSERT INTO "STUDENT" ("student_id", "student_name", "date_of_birth", "class_id") VALUES
-('BA12-068', 'Nguyen Dinh Hai', '2003-05-26', '1'),
-('BA12-003', 'Tran Ngoc Viet Anh', '2003-03-14', '1'),
-('BA12-006', 'Ngo Huyen Anh', '2003-12-24', '1'),
-('BA12-007', 'Tang Van Anh', '2003-09-01', '1'),
-('BA12-093', 'Luyen Pham Ngoc Khanh', '2003-04-04', '1'),
-('BA12-095', 'Pham Duc Khiem', '2003-02-09', '1');
-
-INSERT INTO "SUBJECT" ("subject_name") VALUES
-('Advance Databases'),
-
 ALTER TABLE "ATTENDANCE_RECORD"
 ADD CONSTRAINT unique_student_date UNIQUE ("student_id", "date");
 
@@ -217,18 +203,55 @@ AFTER INSERT ON "ATTENDANCE_RECORD"
 FOR EACH ROW
 EXECUTE FUNCTION add_default_absent_record();
 
+CREATE OR REPLACE FUNCTION create_attendance_summary_for_new_subject_class()
+RETURNS TRIGGER AS $$
+BEGIN
+    -- Chèn một bản tóm tắt điểm danh cho từng học sinh trong lớp và môn học mới
+    INSERT INTO "ATTENDANCE_SUMMARY" (class_id, subject_id, student_id, total_absent, total_present)
+    SELECT 
+        NEW.class_id, 
+        NEW.subject_id, 
+        s.id, 
+        '0', -- Tổng số vắng mặt ban đầu
+        '0'  -- Tổng số có mặt ban đầu
+    FROM "STUDENT" s
+    WHERE s.class_id = NEW.class_id; -- Lọc học sinh theo lớp học mới
+    
+    RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
 
-INSERT INTO "ATTENDANCE_RECORD" (
-    class_id,
-    subject_id,
-    student_id,
-    date,
-    status
-)	
-VALUES
-    ('1', '1', '1', '2024-12-13', 'Present'),
-	('1', '1', '2', '2024-12-13', 'Present'),
-    ('1', '1', '3', '2024-12-13', 'Present'),
-    ('1', '1', '4', '2024-12-13', 'Present'),
-	('1', '1', '5', '2024-12-13', 'Present'),
-	('1', '1', '6', '2024-12-13', 'Present');
+CREATE TRIGGER trigger_create_attendance_summary_for_subject_class
+AFTER INSERT ON "SUBJECT_CLASS"
+FOR EACH ROW
+EXECUTE FUNCTION create_attendance_summary_for_new_subject_class();
+
+
+INSERT INTO "CLASS" ("class_name") VALUES
+('ICT Class 1');
+
+INSERT INTO "STUDENT" ("student_id", "student_name", "date_of_birth", "class_id") VALUES
+('BA12-068', 'Nguyen Dinh Hai', '2003-05-26', '1'),
+('BA12-003', 'Tran Ngoc Viet Anh', '2003-03-14', '1'),
+('BA12-006', 'Ngo Huyen Anh', '2003-12-24', '1'),
+('BA12-007', 'Tang Van Anh', '2003-09-01', '1'),
+('BA12-093', 'Luyen Pham Ngoc Khanh', '2003-04-04', '1'),
+('BA12-095', 'Pham Duc Khiem', '2003-02-09', '1');
+
+INSERT INTO "SUBJECT" ("subject_name") VALUES
+('Advance Databases');
+
+-- INSERT INTO "ATTENDANCE_RECORD" (
+--     class_id,
+--     subject_id,
+--     student_id,
+--     date,
+--     status
+-- )	
+-- VALUES
+--     ('1', '1', '1', '2024-12-13', 'Present'),
+-- 	('1', '1', '2', '2024-12-13', 'Present'),
+--     ('1', '1', '3', '2024-12-13', 'Present'),
+--     ('1', '1', '4', '2024-12-13', 'Present'),
+-- 	('1', '1', '5', '2024-12-13', 'Present'),
+-- 	('1', '1', '6', '2024-12-13', 'Present');
