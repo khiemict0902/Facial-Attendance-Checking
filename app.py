@@ -200,6 +200,9 @@ def delete_subject(id):
     subject_to_delete = Subject.query.get_or_404(id)
 
     try:
+        AttendanceSummary.query.filter_by(subject_id=id).delete()
+        AttendanceRecord.query.filter_by(subject_id=id).delete()
+        SubjectClass.query.filter_by(subject_id=id).delete()
         db.session.delete(subject_to_delete)
         db.session.commit()
         return redirect('/')
@@ -253,6 +256,10 @@ def delete_class(id):
     class_to_delete = Class.query.get_or_404(id)
 
     try:
+        AttendanceSummary.query.filter_by(class_id=id).delete()
+        AttendanceRecord.query.filter_by(class_id=id).delete()
+        SubjectClass.query.filter_by(class_id=id).delete()
+        Student.query.filter_by(class_id=id).delete()
         db.session.delete(class_to_delete)
         db.session.commit()
         return redirect('/class')
@@ -330,10 +337,11 @@ def subject_student_list(subject_id, class_id):
     classes = Class.query.filter_by(id = class_id).first()
     subject = Subject.query.filter_by(id = subject_id).first()
     students = Student.query.filter_by(class_id = class_id).order_by(Student.id).all()
-    attendance_dates = db.session.query(AttendanceRecord.date).distinct().order_by(AttendanceRecord.date).all()
-    dates = [date[0] for date in attendance_dates]
     attendanceRecords = AttendanceRecord.query.filter_by(subject_id = subject_id, class_id = class_id).all()
     attendanceSummaries = AttendanceSummary.query.filter_by(subject_id = subject_id, class_id = class_id).all()
+    attendance_dates = [attendanceRecord.date for attendanceRecord in attendanceRecords]
+    dates = [date for date in attendance_dates]
+    dates = list(set(dates))
     return render_template('subject_student_list.html', students = students, subject = subject, attendanceRecords =attendanceRecords, attendanceSummaries = attendanceSummaries, dates = dates, classes = classes)
 
 
