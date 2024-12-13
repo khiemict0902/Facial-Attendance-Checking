@@ -91,9 +91,6 @@ ADD FOREIGN KEY("subject_id") REFERENCES "SUBJECT"("id")
 	ADD FOREIGN KEY("class_id") REFERENCES "CLASS"("id")
 	ON UPDATE NO ACTION ON DELETE NO ACTION;
 
-ALTER TABLE "ATTENDANCE_RECORD"
-ADD CONSTRAINT unique_student_date UNIQUE ("student_id", "date");
-
 CREATE OR REPLACE FUNCTION create_attendance_summary()
 RETURNS TRIGGER AS $$
 BEGIN
@@ -135,32 +132,36 @@ RETURNS TRIGGER AS $$
 BEGIN
     IF (TG_OP = 'INSERT') THEN
         IF (NEW.status = 'Present') THEN
+            -- Chỉ cập nhật khi có sự thay đổi trong trạng thái
             UPDATE "ATTENDANCE_SUMMARY"
             SET total_present = total_present::INTEGER + 1
             WHERE student_id = NEW.student_id AND class_id = NEW.class_id AND subject_id = NEW.subject_id;
         ELSIF (NEW.status = 'Absent') THEN
+            -- Chỉ cập nhật khi có sự thay đổi trong trạng thái
             UPDATE "ATTENDANCE_SUMMARY"
             SET total_absent = total_absent::INTEGER + 1
             WHERE student_id = NEW.student_id AND class_id = NEW.class_id AND subject_id = NEW.subject_id;
         END IF;
     ELSIF (TG_OP = 'UPDATE') THEN
-        IF (OLD.status = 'Present') THEN
-            UPDATE "ATTENDANCE_SUMMARY"
-            SET total_present = total_present::INTEGER - 1
-            WHERE student_id = OLD.student_id AND class_id = OLD.class_id AND subject_id = OLD.subject_id;
-        ELSIF (OLD.status = 'Absent') THEN
-            UPDATE "ATTENDANCE_SUMMARY"
-            SET total_absent = total_absent::INTEGER - 1
-            WHERE student_id = OLD.student_id AND class_id = OLD.class_id AND subject_id = OLD.subject_id;
-        END IF;
-        IF (NEW.status = 'Present') THEN
-            UPDATE "ATTENDANCE_SUMMARY"
-            SET total_present = total_present::INTEGER + 1
-            WHERE student_id = NEW.student_id AND class_id = NEW.class_id AND subject_id = NEW.subject_id;
-        ELSIF (NEW.status = 'Absent') THEN
-            UPDATE "ATTENDANCE_SUMMARY"
-            SET total_absent = total_absent::INTEGER + 1
-            WHERE student_id = NEW.student_id AND class_id = NEW.class_id AND subject_id = NEW.subject_id;
+        IF (OLD.status != NEW.status) THEN
+            IF (OLD.status = 'Present') THEN
+                UPDATE "ATTENDANCE_SUMMARY"
+                SET total_present = total_present::INTEGER - 1
+                WHERE student_id = OLD.student_id AND class_id = OLD.class_id AND subject_id = OLD.subject_id;
+            ELSIF (OLD.status = 'Absent') THEN
+                UPDATE "ATTENDANCE_SUMMARY"
+                SET total_absent = total_absent::INTEGER - 1
+                WHERE student_id = OLD.student_id AND class_id = OLD.class_id AND subject_id = OLD.subject_id;
+            END IF;
+            IF (NEW.status = 'Present') THEN
+                UPDATE "ATTENDANCE_SUMMARY"
+                SET total_present = total_present::INTEGER + 1
+                WHERE student_id = NEW.student_id AND class_id = NEW.class_id AND subject_id = NEW.subject_id;
+            ELSIF (NEW.status = 'Absent') THEN
+                UPDATE "ATTENDANCE_SUMMARY"
+                SET total_absent = total_absent::INTEGER + 1
+                WHERE student_id = NEW.student_id AND class_id = NEW.class_id AND subject_id = NEW.subject_id;
+            END IF;
         END IF;
     ELSIF (TG_OP = 'DELETE') THEN
         IF (OLD.status = 'Present') THEN
@@ -226,6 +227,42 @@ AFTER INSERT ON "SUBJECT_CLASS"
 FOR EACH ROW
 EXECUTE FUNCTION create_attendance_summary_for_new_subject_class();
 
+CREATE OR REPLACE FUNCTION update_and_delete_duplicate_record()
+RETURNS TRIGGER AS $$
+BEGIN
+    -- Kiểm tra nếu có bản ghi cũ trùng với bản ghi mới
+    IF EXISTS (
+        SELECT 1
+        FROM "ATTENDANCE_RECORD"
+        WHERE student_id = NEW.student_id
+          AND class_id = NEW.class_id
+          AND subject_id = NEW.subject_id
+          AND date = NEW.date
+    ) THEN
+        -- Cập nhật trạng thái của bản ghi cũ bằng trạng thái của bản ghi mới
+        UPDATE "ATTENDANCE_RECORD"
+        SET status = NEW.status
+        WHERE student_id = NEW.student_id
+          AND class_id = NEW.class_id
+          AND subject_id = NEW.subject_id
+          AND date = NEW.date;
+
+        -- Xóa bản ghi mới để tránh trùng lặp
+        RETURN NULL;
+    ELSE
+        -- Nếu không có bản ghi cũ, chèn bản ghi mới
+        RETURN NEW;
+    END IF;
+END;
+$$ LANGUAGE plpgsql;
+
+-- Trigger áp dụng trên bảng ATTENDANCE_RECORD
+DROP TRIGGER IF EXISTS trigger_update_and_delete_duplicate ON "ATTENDANCE_RECORD";
+
+CREATE TRIGGER trigger_update_and_delete_duplicate
+BEFORE INSERT ON "ATTENDANCE_RECORD"
+FOR EACH ROW
+EXECUTE FUNCTION update_and_delete_duplicate_record();
 
 INSERT INTO "CLASS" ("class_name") VALUES
 ('ICT Class 1');
