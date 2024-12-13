@@ -69,10 +69,10 @@ class AttendanceRecord(db.Model):
     class_ = db.relationship('Class', backref=db.backref('attendance_records', lazy=True))
     subject = db.relationship('Subject', backref=db.backref('attendance_records', lazy=True))
 
-    def __init__(self, student_id, subject_id, class_name ,date ,status ):
+    def __init__(self, student_id, subject_id, class_id ,date ,status ):
         self.student_id = student_id
         self.subject_id = subject_id
-        self.class_id = class_name
+        self.class_id = class_id
         self.date = date
         self.status = status
 
@@ -395,35 +395,57 @@ def checking():
     s_id = data.get('id')
     print(s_id)
 
-    st = Student.query.filter(Student.student_id==s_id).first()
+    # Get student by ID
+    st = Student.query.filter(Student.student_id == s_id).first()
     if not st:
         return "No student"
 
+    # Get subject by name
     s_subject = data.get('subject')
-    sj = Subject.query.filter(Subject.subject_name==s_subject).first()
+    sj = Subject.query.filter(Subject.subject_name == s_subject).first()
     if not sj:
         return "No subject"
     
+    # Get class by name
     s_class = data.get('class')
-    sc = Class.query.filter(Class.class_name==s_class).first()
-
+    sc = Class.query.filter(Class.class_name == s_class).first()
     if not sc:
         return "No class"
     
+    # Get current date
     dt = str(datetime.now())
-    date = dt[:10:]
+    date = dt[:10:]  # YYYY-MM-DD
 
-    new_record = AttendanceRecord(int(st.id),int(sj.id),int(sc.id),date,"Present")
-    print(new_record.student_id)
-    try:
-        db.session.add(new_record)
-        db.session.commit()
-        print("Success")
-        return "Success"
-    except:
-        print("False")
+    # Check if the attendance record already exists
+    existing_record = AttendanceRecord.query.filter(
+        AttendanceRecord.student_id == st.id,
+        AttendanceRecord.subject_id == sj.id,
+        AttendanceRecord.class_id == sc.id,
+        AttendanceRecord.date == date
+    ).first()
 
-        return "False"
+    if existing_record:
+        # If record exists, update the status
+        existing_record.status = "Present"
+        try:
+            db.session.commit()
+            print("Updated existing record")
+            return "Updated existing record"
+        except Exception as e:
+            print(f"Error updating record: {e}")
+            return "Failed to update record"
+    else:
+        # If no record exists, create a new one
+        new_record = AttendanceRecord(int(st.id), int(sj.id), int(sc.id), date, "Present")
+        try:
+            db.session.add(new_record)
+            db.session.commit()
+            print("Inserted new record")
+            return "Inserted new record"
+        except Exception as e:
+            print(f"Error inserting record: {e}")
+            return "Failed to insert record"
+
     
 
 if __name__ == '__main__':
