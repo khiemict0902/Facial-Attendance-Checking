@@ -132,45 +132,41 @@ RETURNS TRIGGER AS $$
 BEGIN
     IF (TG_OP = 'INSERT') THEN
         IF (NEW.status = 'Present') THEN
-            -- Chỉ cập nhật khi có sự thay đổi trong trạng thái
             UPDATE "ATTENDANCE_SUMMARY"
-            SET total_present = total_present::INTEGER + 1
+            SET total_present = GREATEST(total_present::INTEGER + 1, 0)
             WHERE student_id = NEW.student_id AND class_id = NEW.class_id AND subject_id = NEW.subject_id;
         ELSIF (NEW.status = 'Absent') THEN
-            -- Chỉ cập nhật khi có sự thay đổi trong trạng thái
             UPDATE "ATTENDANCE_SUMMARY"
-            SET total_absent = total_absent::INTEGER + 1
+            SET total_absent = GREATEST(total_absent::INTEGER + 1, 0)
             WHERE student_id = NEW.student_id AND class_id = NEW.class_id AND subject_id = NEW.subject_id;
         END IF;
     ELSIF (TG_OP = 'UPDATE') THEN
-        IF (OLD.status != NEW.status) THEN
-            IF (OLD.status = 'Present') THEN
-                UPDATE "ATTENDANCE_SUMMARY"
-                SET total_present = total_present::INTEGER - 1
-                WHERE student_id = OLD.student_id AND class_id = OLD.class_id AND subject_id = OLD.subject_id;
-            ELSIF (OLD.status = 'Absent') THEN
-                UPDATE "ATTENDANCE_SUMMARY"
-                SET total_absent = total_absent::INTEGER - 1
-                WHERE student_id = OLD.student_id AND class_id = OLD.class_id AND subject_id = OLD.subject_id;
-            END IF;
-            IF (NEW.status = 'Present') THEN
-                UPDATE "ATTENDANCE_SUMMARY"
-                SET total_present = total_present::INTEGER + 1
-                WHERE student_id = NEW.student_id AND class_id = NEW.class_id AND subject_id = NEW.subject_id;
-            ELSIF (NEW.status = 'Absent') THEN
-                UPDATE "ATTENDANCE_SUMMARY"
-                SET total_absent = total_absent::INTEGER + 1
-                WHERE student_id = NEW.student_id AND class_id = NEW.class_id AND subject_id = NEW.subject_id;
-            END IF;
+        IF (OLD.status = 'Present') THEN
+            UPDATE "ATTENDANCE_SUMMARY"
+            SET total_present = GREATEST(total_present::INTEGER - 1, 0)
+            WHERE student_id = OLD.student_id AND class_id = OLD.class_id AND subject_id = OLD.subject_id;
+        ELSIF (OLD.status = 'Absent') THEN
+            UPDATE "ATTENDANCE_SUMMARY"
+            SET total_absent = GREATEST(total_absent::INTEGER - 1, 0)
+            WHERE student_id = OLD.student_id AND class_id = OLD.class_id AND subject_id = OLD.subject_id;
+        END IF;
+        IF (NEW.status = 'Present') THEN
+            UPDATE "ATTENDANCE_SUMMARY"
+            SET total_present = GREATEST(total_present::INTEGER + 1, 0)
+            WHERE student_id = NEW.student_id AND class_id = NEW.class_id AND subject_id = NEW.subject_id;
+        ELSIF (NEW.status = 'Absent') THEN
+            UPDATE "ATTENDANCE_SUMMARY"
+            SET total_absent = GREATEST(total_absent::INTEGER + 1, 0)
+            WHERE student_id = NEW.student_id AND class_id = NEW.class_id AND subject_id = NEW.subject_id;
         END IF;
     ELSIF (TG_OP = 'DELETE') THEN
         IF (OLD.status = 'Present') THEN
             UPDATE "ATTENDANCE_SUMMARY"
-            SET total_present = total_present::INTEGER - 1
+            SET total_present = GREATEST(total_present::INTEGER - 1, 0)
             WHERE student_id = OLD.student_id AND class_id = OLD.class_id AND subject_id = OLD.subject_id;
         ELSIF (OLD.status = 'Absent') THEN
             UPDATE "ATTENDANCE_SUMMARY"
-            SET total_absent = total_absent::INTEGER - 1
+            SET total_absent = GREATEST(total_absent::INTEGER - 1, 0)
             WHERE student_id = OLD.student_id AND class_id = OLD.class_id AND subject_id = OLD.subject_id;
         END IF;
     END IF;
@@ -178,7 +174,7 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql;
 
-CREATE TRIGGER trigger_update_attendance_summary
+CREATE OR REPLACE TRIGGER trigger_update_attendance_summary
 AFTER INSERT OR UPDATE OR DELETE ON "ATTENDANCE_RECORD"
 FOR EACH ROW
 EXECUTE FUNCTION update_attendance_summary();
@@ -255,9 +251,6 @@ BEGIN
     END IF;
 END;
 $$ LANGUAGE plpgsql;
-
--- Trigger áp dụng trên bảng ATTENDANCE_RECORD
-DROP TRIGGER IF EXISTS trigger_update_and_delete_duplicate ON "ATTENDANCE_RECORD";
 
 CREATE TRIGGER trigger_update_and_delete_duplicate
 BEFORE INSERT ON "ATTENDANCE_RECORD"
