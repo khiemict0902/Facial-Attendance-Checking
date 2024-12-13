@@ -93,107 +93,129 @@ ADD FOREIGN KEY("subject_id") REFERENCES "SUBJECT"("id")
 
 INSERT INTO "CLASS" ("class_name") VALUES
 ('ICT Class 1'),
-('ICT Class 2');
 
 INSERT INTO "STUDENT" ("student_id", "student_name", "date_of_birth", "class_id") VALUES
 ('BA12-068', 'Nguyen Dinh Hai', '2003-05-26', '1'),
 ('BA12-003', 'Tran Ngoc Viet Anh', '2003-03-14', '1'),
 ('BA12-006', 'Ngo Huyen Anh', '2003-12-24', '1'),
-('BA12-007', 'Tang Van Anh', '2003-09-01', '2'),
-('BA12-093', 'Luyen Pham Ngoc Khanh', '2003-04-04', '2'),
-('BA12-095', 'Pham Duc Khiem', '2003-02-09', '2');
+('BA12-007', 'Tang Van Anh', '2003-09-01', '1'),
+('BA12-093', 'Luyen Pham Ngoc Khanh', '2003-04-04', '1'),
+('BA12-095', 'Pham Duc Khiem', '2003-02-09', '1');
 
 INSERT INTO "SUBJECT" ("subject_name") VALUES
 ('Advance Databases'),
-('Introduction to Cryptography');
 
+ALTER TABLE "ATTENDANCE_RECORD"
+ADD CONSTRAINT unique_student_date UNIQUE ("student_id", "date");
 
-INSERT INTO "SUBJECT_CLASS" ("class_id", "subject_id") VALUES
-('1', '1'),
-('1', '2'),
-('2', '1'),
-('2', '2');
-
-CREATE OR REPLACE FUNCTION create_attendance_summary_for_new_student()
+CREATE OR REPLACE FUNCTION create_attendance_summary()
 RETURNS TRIGGER AS $$
 BEGIN
-    -- Insert initial attendance summary records for the new student
-    INSERT INTO "ATTENDANCE_SUMMARY" ("class_id", "subject_id", "student_id", "total_present", "total_absent")
-    SELECT DISTINCT
-        NEW.class_id,
-        "SUBJECT_CLASS"."subject_id",
-        NEW.id,
-        0, -- Total present is 0 for a new student
-        0  -- Total absent is 0 for a new student
-    FROM "SUBJECT_CLASS"
-    WHERE "SUBJECT_CLASS"."class_id" = NEW.class_id;
-
-    -- Insert empty attendance records for all existing attendance sessions
-    INSERT INTO "ATTENDANCE_RECORD" ("class_id", "subject_id", "student_id", "date", "status")
-    SELECT DISTINCT
-        "ATTENDANCE_RECORD"."class_id",
-        "ATTENDANCE_RECORD"."subject_id",
-        NEW.id,
-        "ATTENDANCE_RECORD"."date",
-        '' -- Status is an empty string for a new student
-    FROM "ATTENDANCE_RECORD"
-    WHERE "ATTENDANCE_RECORD"."class_id" = NEW.class_id;
-
+    INSERT INTO "ATTENDANCE_SUMMARY" (class_id, subject_id, student_id, total_absent, total_present)
+    SELECT NEW.class_id, s.id, NEW.id, '0', '0'
+    FROM "SUBJECT" s;
     RETURN NEW;
 END;
 $$ LANGUAGE plpgsql;
 
--- Trigger to invoke the function after a new student is added
-CREATE TRIGGER trigger_create_attendance_summary_for_new_student
+CREATE TRIGGER trigger_create_attendance_summary
 AFTER INSERT ON "STUDENT"
 FOR EACH ROW
-EXECUTE FUNCTION create_attendance_summary_for_new_student();
+EXECUTE FUNCTION create_attendance_summary();
+
+CREATE OR REPLACE FUNCTION create_empty_attendance_record()
+RETURNS TRIGGER AS $$
+BEGIN
+    INSERT INTO "ATTENDANCE_RECORD" (student_id, class_id, subject_id, date, status)
+    SELECT DISTINCT ON (ar.date) NEW.id, NEW.class_id, sc.subject_id, ar.date, ''
+    FROM "SUBJECT_CLASS" sc
+    JOIN "ATTENDANCE_RECORD" ar ON ar.class_id = NEW.class_id AND ar.subject_id = sc.subject_id
+    WHERE NOT EXISTS (
+        SELECT 1
+        FROM "ATTENDANCE_RECORD"
+        WHERE student_id = NEW.id AND class_id = NEW.class_id AND subject_id = sc.subject_id AND date = ar.date
+    );
+    RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+
+CREATE TRIGGER trigger_create_empty_attendance_record
+AFTER INSERT ON "STUDENT"
+FOR EACH ROW
+EXECUTE FUNCTION create_empty_attendance_record();
 
 CREATE OR REPLACE FUNCTION update_attendance_summary()
 RETURNS TRIGGER AS $$
 BEGIN
-    -- Update the attendance summary
-    -- Check if the summary already exists for the given student, subject, and class
-    IF EXISTS (
-        SELECT 1
-        FROM "ATTENDANCE_SUMMARY"
-        WHERE "class_id" = NEW.class_id
-        AND "subject_id" = NEW.subject_id
-        AND "student_id" = NEW.student_id
-    ) THEN
-        -- If the summary exists, update it
-        UPDATE "ATTENDANCE_SUMMARY"
-        SET 
-            "total_present" = (SELECT COUNT(*) FROM "ATTENDANCE_RECORD" 
-                               WHERE "class_id" = NEW.class_id
-                               AND "subject_id" = NEW.subject_id 
-                               AND "student_id" = NEW.student_id 
-                               AND "status" = 'Present'),
-            "total_absent" = (SELECT COUNT(*) FROM "ATTENDANCE_RECORD" 
-                              WHERE "class_id" = NEW.class_id
-                              AND "subject_id" = NEW.subject_id 
-                              AND "student_id" = NEW.student_id 
-                              AND "status" = 'Absent')
-        WHERE "class_id" = NEW.class_id
-        AND "subject_id" = NEW.subject_id
-        AND "student_id" = NEW.student_id;
-    ELSE
-        -- If the summary does not exist, insert a new row
-        INSERT INTO "ATTENDANCE_SUMMARY" 
-        ("class_id", "subject_id", "student_id", "total_present", "total_absent")
-        VALUES 
-        (NEW.class_id, NEW.subject_id, NEW.student_id, 
-         CASE WHEN NEW.status = 'Present' THEN 1 ELSE 0 END, 
-         CASE WHEN NEW.status = 'Absent' THEN 1 ELSE 0 END);
+    IF (TG_OP = 'INSERT') THEN
+        IF (NEW.status = 'Present') THEN
+            UPDATE "ATTENDANCE_SUMMARY"
+            SET total_present = total_present::INTEGER + 1
+            WHERE student_id = NEW.student_id AND class_id = NEW.class_id AND subject_id = NEW.subject_id;
+        ELSIF (NEW.status = 'Absent') THEN
+            UPDATE "ATTENDANCE_SUMMARY"
+            SET total_absent = total_absent::INTEGER + 1
+            WHERE student_id = NEW.student_id AND class_id = NEW.class_id AND subject_id = NEW.subject_id;
+        END IF;
+    ELSIF (TG_OP = 'UPDATE') THEN
+        IF (OLD.status = 'Present') THEN
+            UPDATE "ATTENDANCE_SUMMARY"
+            SET total_present = total_present::INTEGER - 1
+            WHERE student_id = OLD.student_id AND class_id = OLD.class_id AND subject_id = OLD.subject_id;
+        ELSIF (OLD.status = 'Absent') THEN
+            UPDATE "ATTENDANCE_SUMMARY"
+            SET total_absent = total_absent::INTEGER - 1
+            WHERE student_id = OLD.student_id AND class_id = OLD.class_id AND subject_id = OLD.subject_id;
+        END IF;
+        IF (NEW.status = 'Present') THEN
+            UPDATE "ATTENDANCE_SUMMARY"
+            SET total_present = total_present::INTEGER + 1
+            WHERE student_id = NEW.student_id AND class_id = NEW.class_id AND subject_id = NEW.subject_id;
+        ELSIF (NEW.status = 'Absent') THEN
+            UPDATE "ATTENDANCE_SUMMARY"
+            SET total_absent = total_absent::INTEGER + 1
+            WHERE student_id = NEW.student_id AND class_id = NEW.class_id AND subject_id = NEW.subject_id;
+        END IF;
+    ELSIF (TG_OP = 'DELETE') THEN
+        IF (OLD.status = 'Present') THEN
+            UPDATE "ATTENDANCE_SUMMARY"
+            SET total_present = total_present::INTEGER - 1
+            WHERE student_id = OLD.student_id AND class_id = OLD.class_id AND subject_id = OLD.subject_id;
+        ELSIF (OLD.status = 'Absent') THEN
+            UPDATE "ATTENDANCE_SUMMARY"
+            SET total_absent = total_absent::INTEGER - 1
+            WHERE student_id = OLD.student_id AND class_id = OLD.class_id AND subject_id = OLD.subject_id;
+        END IF;
     END IF;
-
     RETURN NEW;
 END;
 $$ LANGUAGE plpgsql;
+
 CREATE TRIGGER trigger_update_attendance_summary
-AFTER INSERT ON "ATTENDANCE_RECORD"
+AFTER INSERT OR UPDATE OR DELETE ON "ATTENDANCE_RECORD"
 FOR EACH ROW
 EXECUTE FUNCTION update_attendance_summary();
+
+CREATE OR REPLACE FUNCTION add_default_absent_record()
+RETURNS TRIGGER AS $$
+BEGIN
+    INSERT INTO "ATTENDANCE_RECORD" (student_id, class_id, subject_id, date, status)
+    SELECT s.id, sc.class_id, sc.subject_id, NEW.date, 'Absent'
+    FROM "STUDENT" s
+    JOIN "SUBJECT_CLASS" sc ON sc.class_id = s.class_id
+    WHERE NOT EXISTS (
+        SELECT 1
+        FROM "ATTENDANCE_RECORD"
+        WHERE student_id = s.id AND class_id = sc.class_id AND subject_id = sc.subject_id AND date = NEW.date
+    );
+    RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+
+CREATE TRIGGER trigger_add_default_absent_record
+AFTER INSERT ON "ATTENDANCE_RECORD"
+FOR EACH ROW
+EXECUTE FUNCTION add_default_absent_record();
 
 
 INSERT INTO "ATTENDANCE_RECORD" (
@@ -202,34 +224,11 @@ INSERT INTO "ATTENDANCE_RECORD" (
     student_id,
     date,
     status
-)
+)	
 VALUES
-     ('1', '1', '1', '2024-11-25', 'Present'),
-	('1', '1', '1', '2024-11-26', 'Present'),
-    ('1', '2', '1', '2024-11-25', 'Absent'),
-    ('1', '2', '1', '2024-11-26', 'Absent'),
-
-	('1', '1', '2', '2024-11-25', 'Present'),
-	('1', '1', '2', '2024-11-26', 'Present'),
-    ('1', '2', '2', '2024-11-25', 'Absent'),
-    ('1', '2', '2', '2024-11-26', 'Absent'),
-
-	('1', '1', '3', '2024-11-25', 'Present'),
-	('1', '1', '3', '2024-11-26', 'Present'),   
-    ('1', '2', '3', '2024-11-25', 'Absent'),
-    ('1', '2', '3', '2024-11-26', 'Absent'),
-
-	('2', '1', '4', '2024-11-25', 'Present'),
-	('2', '1', '4', '2024-11-26', 'Present'),
-    ('2', '2', '4', '2024-11-25', 'Absent'),
-    ('2', '2', '4', '2024-11-26', 'Absent'),
-
-	('2', '1', '5', '2024-11-25', 'Present'),
-	('2', '1', '5', '2024-11-26', 'Present'),
-    ('2', '2', '5', '2024-11-25', 'Absent'),
-    ('2', '2', '5', '2024-11-26', 'Absent'),
-
-	('2', '1', '6', '2024-11-25', 'Present'),
-	('2', '1', '6', '2024-11-26', 'Present'),
-    ('2', '2', '6', '2024-11-25', 'Absent'),
-    ('2', '2', '6', '2024-11-26', 'Absent');
+    ('1', '1', '1', '2024-12-13', 'Present'),
+	('1', '1', '2', '2024-12-13', 'Present'),
+    ('1', '1', '3', '2024-12-13', 'Present'),
+    ('1', '1', '4', '2024-12-13', 'Present'),
+	('1', '1', '5', '2024-12-13', 'Present'),
+	('1', '1', '6', '2024-12-13', 'Present');
