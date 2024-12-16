@@ -1,10 +1,17 @@
+import os
+import uuid
 from flask import Flask, render_template, request, redirect, url_for , jsonify
 from flask_sqlalchemy import SQLAlchemy
 from sqlalchemy import not_
 from datetime import datetime
 import psycopg2 
+from werkzeug.utils import secure_filename
   
+UPLOAD_FOLDER = 'student_image'
+ALLOWED_EXTENSIONS = {'png', 'jpg', 'jpeg', 'gif'}
+
 app = Flask(__name__) 
+app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
 app.config["SQLALCHEMY_DATABASE_URI"] = "postgresql://postgres:hai2652003@localhost/student_usth"
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False 
 db = SQLAlchemy(app)
@@ -273,6 +280,11 @@ def class_student_list(class_id):
     students = Student.query.filter_by(class_id = class_id).order_by(Student.id).all()
     return render_template('class_student_list.html', students = students, classes = classes)
 
+
+def allowed_file(filename):
+    return '.' in filename and \
+           filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
+
 #add student
 @app.route('/<class_id>/student_list/add_student', methods = ['POST', 'GET'])
 def add_student(class_id):
@@ -280,10 +292,26 @@ def add_student(class_id):
         student_id = request.form['student_id']
         student_name = request.form['student_name']
         date_of_birth = request.form['date_of_birth']
+        student_images = request.files.getlist('student_images[]')
         class_id = class_id
-        new_student = Student(student_id = student_id, student_name = student_name, date_of_birth = date_of_birth, class_id =class_id)
+
+        student_folder = os.path.join(app.config['UPLOAD_FOLDER'], secure_filename(student_id))
+        if not os.path.exists(student_folder):
+            os.makedirs(student_folder)
+
+        uploaded_files = []
 
         try:
+            for student_image in student_images:
+                if not allowed_file(student_image.filename):
+                    return f"Invalid file type for {student_image.filename}", 400
+
+                filename = f"{uuid.uuid4().hex}_{secure_filename(student_image.filename)}"
+                image_path = os.path.join(student_folder, filename)
+                student_image.save(image_path)
+                uploaded_files.append(image_path)
+        
+            new_student = Student(student_id = student_id, student_name = student_name, date_of_birth = date_of_birth, class_id =class_id)
             db.session.add(new_student)
             db.session.commit()
             return redirect(f'/{class_id}/student_list')
@@ -345,6 +373,24 @@ def subject_student_list(subject_id, class_id):
     return render_template('subject_student_list.html', students = students, subject = subject, attendanceRecords =attendanceRecords, attendanceSummaries = attendanceSummaries, dates = dates, classes = classes)
 
 
+#edit status
+@app.route('/<subject_id>/<class_id>/<student_id>/<id>/edit', methods=['GET', 'POST'])     
+def update_status(subject_id, class_id, student_id,id):
+    record_to_edit = AttendanceRecord.query.get_or_404(id)
+
+    if request.method == 'POST':
+        record_to_edit.status = request.form['record_status']
+
+        try:
+            db.session.commit()
+            return redirect(f'/{subject_id}/{class_id}/student_list')
+        except:
+            return 'There was an issue updating your task'
+
+    else:
+        student = Student.query.filter_by(id = student_id).first()
+        return render_template('edit_status.html', record_to_edit=record_to_edit, student = student, subject_id= subject_id, class_id = class_id)
+
 #check attendance
 @app.route('/check_attendance')
 def check_attendance():
@@ -387,6 +433,7 @@ def get_attendance_status(student_id):
         })
 
     return jsonify({"student_name": student.student_name, "attendance_records": records})
+
 
 #api
 @app.route('/checking', methods=['POST'])

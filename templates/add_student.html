@@ -10,10 +10,12 @@
         <h2>{{ classes.class_name }}</h2>
     </div>
     <h1 class="form_title">Add Student </h1>
-    <form action="/{{classes.id}}/student_list/add_student" method="POST" class="information-form">
+    <form action="/{{classes.id}}/student_list/add_student" method="POST" class="information-form" enctype=multipart/form-data>
         <input class="input_form" type="text" name="student_name" id="student_name" placeholder="Enter student name" required>
         <input class="input_form" type="text" name="student_id" id="student_id" placeholder="Enter student id" required>
         <input class="input_form" type="text" name="date_of_birth" id="date_of_birth" placeholder="Enter date of birth (yyyy/mm/dd)" required>
+        <input type="file" name="student_images[]" id="student_images" accept="image/*" multiple required> 
+        <label class="upload_files" for="student_images">Upload image</label>
         <button class="button_form" type="submit">Add</button>
     </form>
 
