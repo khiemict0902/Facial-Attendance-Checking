@@ -3,11 +3,12 @@ import uuid
 from flask import Flask, render_template, request, redirect, url_for , jsonify
 from flask_sqlalchemy import SQLAlchemy
 from sqlalchemy import not_
+from deepface import DeepFace
 from datetime import datetime
 import psycopg2 
 from werkzeug.utils import secure_filename
   
-UPLOAD_FOLDER = 'student_image'
+UPLOAD_FOLDER = './db2'
 ALLOWED_EXTENSIONS = {'png', 'jpg', 'jpeg', 'gif'}
 
 app = Flask(__name__) 
@@ -310,6 +311,7 @@ def add_student(class_id):
                 image_path = os.path.join(student_folder, filename)
                 student_image.save(image_path)
                 uploaded_files.append(image_path)
+                DeepFace.find(img_path='../src/db/BA12-003/d%-0.jpg',db_path=UPLOAD_FOLDER,enforce_detection=False, model_name='Facenet512',detector_backend='skip',threshold=0.36)
         
             new_student = Student(student_id = student_id, student_name = student_name, date_of_birth = date_of_birth, class_id =class_id)
             db.session.add(new_student)

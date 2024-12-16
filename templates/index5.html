@@ -1,0 +1,93 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Webcam Face Recognition</title>
+</head>
+<body>
+    <h1>Select Subject</h1>
+    <form id="subjectForm" method="POST" action="/select_subject">
+        <label for="subject">Choose a subject:</label>
+        <select name="subject" id="subject">
+            <option value="Advance Databases">Advance Databases</option>
+            <option value="Introduction to Cryptography">Introduction to Cryptography</option>
+            <option value="Deep Learning">Deep Learning</option>
+        </select>
+        <label for="class">Choose a class:</label>
+        <select name="class" id="class">
+            <option value="ICT Class 1">ICT Class 1</option>
+            <option value="ICT Class 2">ICT Class 2</option>
+        </select>
+        <button type="submit">Start Recognition</button>
+    </form>
+
+    <div id="webcam-container" style="display:none;">
+        <h2>Webcam Stream</h2>
+        <video id="webcam" autoplay playsinline></video>
+        <canvas id="snapshot" style="display:none;"></canvas>
+        <button id="stopButton">Stop Recognition</button>
+    </div>
+
+    <script>
+        // Start webcam on subject selection
+        const form = document.getElementById('subjectForm');
+        const webcamContainer = document.getElementById('webcam-container');
+        const webcam = document.getElementById('webcam');
+        const canvas = document.getElementById('snapshot');
+        const stopButton = document.getElementById('stopButton');
+
+        form.addEventListener('submit', async function (e) {
+            e.preventDefault();
+            const subject = document.getElementById('subject').value;
+            const classs = document.getElementById('class').value;
+            // Send subject to the server
+            await fetch('/select_subject', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ "subject": subject,
+                                        "class": classs
+                 }),
+            });
+
+            // Start the webcam
+            startWebcam();
+        });
+
+        async function startWebcam() {
+            webcamContainer.style.display = 'block';
+            const stream = await navigator.mediaDevices.getUserMedia({ video: true });
+            webcam.srcObject = stream;
+
+            // Start sending frames to the server
+            setInterval(() => sendFrameToServer(), 1000 / 10); // 10 FPS
+        }
+
+        async function sendFrameToServer() {
+            const context = canvas.getContext('2d');
+            canvas.width = webcam.videoWidth;
+            canvas.height = webcam.videoHeight;
+            context.drawImage(webcam, 0, 0, canvas.width, canvas.height);
+
+            const frame = canvas.toDataURL('image/jpeg');
+            await fetch('/process_frame', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ frame }),
+            });
+        }
+
+        stopButton.addEventListener('click', async () => {
+            // Stop the webcam
+            const stream = webcam.srcObject;
+            const tracks = stream.getTracks();
+            tracks.forEach((track) => track.stop());
+            webcam.srcObject = null;
+
+            // Stop recognition on the server
+            await fetch('/stop_recognition', { method: 'POST' });
+            webcamContainer.style.display = 'none';
+        });
+    </script>
+</body>
+</html>
