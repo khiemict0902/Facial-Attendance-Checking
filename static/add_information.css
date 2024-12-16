@@ -5,7 +5,7 @@
 }
 
 .information-container {
-    max-width: 80%;
+    max-width: 90%;
     margin: auto;
     background: white;
     padding: 20px;
@@ -37,3 +37,24 @@
     margin: 12px 0;
     width: 100%;
 }
+
+input[type="file"] {
+    display: none;
+}
+
+label {
+    width: 150px;
+    display: inline-block;
+    text-transform: uppercase;
+    color: #fff;
+    background-color: #2a3c95;
+    padding: 10px;
+    margin: 12px 0;
+    border-radius: 4px;
+    text-align: center;
+}
+
+.upload_files:hover, .button_form:hover {
+    cursor: pointer;
+    opacity: 0.9;
+}   
