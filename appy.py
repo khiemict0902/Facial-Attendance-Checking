@@ -86,7 +86,7 @@ def process_frame():
                                     model_name='Facenet512', detector_backend='skip', threshold=0.36
                                 )
                                 if predictions and not predictions[0].empty:
-                                    name = predictions[0]['identity'][0].split('/')[-2]
+                                    name = predictions[0]['identity'][0].split('\\')[-2]
                                     check_att(name, selected_subject, selected_class)
                                     print(f"Recognized: {name}")
                             except Exception as e:
