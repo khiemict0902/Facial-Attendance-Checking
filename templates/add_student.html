@@ -15,10 +15,40 @@
         <input class="input_form" type="text" name="student_id" id="student_id" placeholder="Enter student id" required>
         <input class="input_form" type="text" name="date_of_birth" id="date_of_birth" placeholder="Enter date of birth (yyyy/mm/dd)" required>
         <input type="file" name="student_images[]" id="student_images" accept="image/*" multiple required> 
-        <label class="upload_files" for="student_images">Upload image</label>
+        <label class="upload_file-button" for="student_images">Upload image</label>
+        <div id="previewImage"></div>
         <button class="button_form" type="submit">Add</button>
     </form>
 
+    <script>
+        document.getElementById('student_images').addEventListener('change', function (event) {
+    const files = event.target.files;
+    const previewImage = document.getElementById('previewImage');
+
+    previewImage.innerHTML = ''; 
+
+    Array.from(files).forEach(file => {
+        if (file.type.startsWith('image/')) {
+            const reader = new FileReader();
+
+            reader.onload = function (e) {
+                const img = document.createElement('img');
+                img.src = e.target.result; 
+                img.style.width = '100px'; 
+                img.style.margin = '10px';
+                previewImage.appendChild(img);
+            };
+
+            reader.readAsDataURL(file); 
+        } else {
+            const errorText = document.createElement('p');
+            errorText.textContent = `File ${file.name} không phải là hình ảnh.`;
+            previewImage.appendChild(errorText);
+        }
+    });
+});
+
+    </script>
 </div>
  {% endblock %}
 

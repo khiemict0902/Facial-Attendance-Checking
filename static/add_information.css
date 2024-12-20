@@ -54,7 +54,7 @@ label {
     text-align: center;
 }
 
-.upload_files:hover, .button_form:hover {
+.upload_file-button:hover, .button_form:hover {
     cursor: pointer;
     opacity: 0.9;
 }   
