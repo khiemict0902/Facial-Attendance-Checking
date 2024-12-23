@@ -4,6 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Webcam Face Recognition</title>
+    <script src="https://cdn.socket.io/4.5.4/socket.io.min.js"></script>
 </head>
 <body>
     <h1>Select Subject</h1>
@@ -30,28 +31,31 @@
         <button id="stopButton">Stop Recognition</button>
     </div>
 
+    <div>
+        <h2>Recognized Attendees</h2>
+        <ul id="attendance-list"></ul>
+    </div>
+
     <script>
-        // Start webcam on subject selection
         const form = document.getElementById('subjectForm');
         const webcamContainer = document.getElementById('webcam-container');
         const webcam = document.getElementById('webcam');
         const canvas = document.getElementById('snapshot');
         const stopButton = document.getElementById('stopButton');
+        const attendanceList = document.getElementById('attendance-list');
+
+        // Socket.IO connection
+        const socket = io();
 
         form.addEventListener('submit', async function (e) {
             e.preventDefault();
             const subject = document.getElementById('subject').value;
             const classs = document.getElementById('class').value;
-            // Send subject to the server
             await fetch('/select_subject', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ "subject": subject,
-                                        "class": classs
-                 }),
+                body: JSON.stringify({ subject, class: classs }),
             });
-
-            // Start the webcam
             startWebcam();
         });
 
@@ -60,7 +64,6 @@
             const stream = await navigator.mediaDevices.getUserMedia({ video: true });
             webcam.srcObject = stream;
 
-            // Start sending frames to the server
             setInterval(() => sendFrameToServer(), 1000 / 10); // 10 FPS
         }
 
@@ -79,15 +82,20 @@
         }
 
         stopButton.addEventListener('click', async () => {
-            // Stop the webcam
             const stream = webcam.srcObject;
             const tracks = stream.getTracks();
             tracks.forEach((track) => track.stop());
             webcam.srcObject = null;
 
-            // Stop recognition on the server
             await fetch('/stop_recognition', { method: 'POST' });
             webcamContainer.style.display = 'none';
+        });
+
+        // Listen for updates from the server
+        socket.on('attendance_checked', (data) => {
+            const listItem = document.createElement('li');
+            listItem.textContent = `${data.dt} ${data.name} - ${data.st}`;
+            attendanceList.appendChild(listItem);
         });
     </script>
 </body>
