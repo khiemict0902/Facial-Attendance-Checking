@@ -8,18 +8,21 @@
 <div class="information-container">
     <h1 class="form_title">Attendance Status</h1>
     <form class="add_information-form">
-        <div class="mb-3">
-            <input type="text" name="student_id" id="student_id" class="input_form" placeholder="Enter student ID">
-        </div>
+        <select class="input_form" name="subject_id" id="subject_id">
+            {% for subject in subjects %}
+                <option value="{{ subject.id }}"> {{ subject.subject_name }} </option>
+            {% endfor %}
+        </select>
+        <input type="text" name="student_id" id="student_id" class="input_form" placeholder="Enter student ID">
         <button type="button" class="button_form" onclick="fetchAttendance()">Check Attendance</button>
     </form>
 
     <!-- Hiển thị tên sinh viên -->
-    <div id="studentInfo" class="mb-4">
+    <div id="studentInfo">
         <!-- Tên sinh viên sẽ được hiển thị ở đây -->
     </div>
 
-    <div id="result" class="mt-4">
+    <div id="result">
         <!-- Kết quả điểm danh sẽ được hiển thị ở đây -->
     </div>
 </div>
@@ -27,24 +30,25 @@
 <script>
     function fetchAttendance() {
         const studentId = document.getElementById('student_id').value;
+        const subjectId = document.getElementById('subject_id').value;
         const resultDiv = document.getElementById('result');
         const studentInfoDiv = document.getElementById('studentInfo');
         
-        resultDiv.innerHTML = '<p class="text-info">Fetching attendance...</p>';
+        resultDiv.innerHTML = '<p">Fetching attendance...</p>';
         studentInfoDiv.innerHTML = '';
 
-        fetch(`/status/${studentId}`)
+        fetch(`/status/${subjectId}/${studentId}`)
             .then(response => response.json())
             .then(data => {
                 if (data.message) {
-                    studentInfoDiv.innerHTML = `<p class="text-danger">${data.message}</p>`;
+                    studentInfoDiv.innerHTML = `<p">${data.message}</p>`;
                     resultDiv.innerHTML = '';
                 } else {
                     // Hiển thị tên sinh viên
-                    studentInfoDiv.innerHTML = `<h3>Student Name: <span class="text-primary">${data.student_name}</span></h3>`;
+                    studentInfoDiv.innerHTML = `<h3>Student Name: <span>${data.student_name}</span></h3>`;
 
                     // Hiển thị bảng kết quả
-                    let html = '<table class="table table-bordered">';
+                    let html = '<table>';
                     html += '<thead><tr><th>Class Name</th><th>Subject Name</th><th>Status</th><th>Date</th></tr></thead><tbody>';
                     data.attendance_records.forEach(record => {
                         html += `<tr>
