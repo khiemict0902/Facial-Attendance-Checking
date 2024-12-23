@@ -1,8 +1,10 @@
 from flask import Flask, render_template, request, jsonify
+from flask_socketio import SocketIO, emit
 import requests
 from ultralytics import YOLO
 from deepface import DeepFace
 import cv2
+from datetime import datetime
 import numpy as np
 import base64
 from flask_sqlalchemy import SQLAlchemy
@@ -11,8 +13,9 @@ import threading
 # Flask app initialization
 app = Flask(__name__)
 app.config["SQLALCHEMY_DATABASE_URI"] = "postgresql://postgres:hai2652003@localhost/student_usth"
-app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False 
+app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 db = SQLAlchemy(app)
+socketio = SocketIO(app, cors_allowed_origins="*")  # Enable SocketIO with CORS
 
 # Global variables
 selected_subject = None
@@ -24,6 +27,23 @@ list_checked = []
 stop_event = threading.Event()
 frame_counter = 0  # Counter to track frames
 
+
+class Student(db.Model):
+    __tablename__ = 'STUDENT'
+    id = db.Column(db.Integer, primary_key=True, autoincrement=True)
+    student_id = db.Column(db.String(255), nullable=False, unique=True)
+    student_name = db.Column(db.String(255), nullable=False)
+    date_of_birth = db.Column(db.Date, nullable=False)
+    class_id = db.Column(db.Integer, db.ForeignKey('CLASS.id'), nullable=False)
+
+    # Relationships
+    class_ = db.relationship('Class', backref=db.backref('students', lazy=True))
+
+    def __repr__(self):
+        return f'<Student {self.student_name}>'
+
+
+# Database models
 class Class(db.Model):
     __tablename__ = 'CLASS'
     id = db.Column(db.Integer, primary_key=True, autoincrement=True)
@@ -31,7 +51,8 @@ class Class(db.Model):
 
     def __repr__(self):
         return f'<Class {self.class_name}>'
-    
+
+
 class Subject(db.Model):
     __tablename__ = 'SUBJECT'
     id = db.Column(db.Integer, primary_key=True, autoincrement=True)
@@ -39,7 +60,8 @@ class Subject(db.Model):
 
     def __repr__(self):
         return f'<Subject {self.subject_name}>'
-    
+
+
 class SubjectClass(db.Model):
     __tablename__ = 'SUBJECT_CLASS'
     class_id = db.Column(db.Integer, db.ForeignKey('CLASS.id'), primary_key=True)
@@ -52,21 +74,41 @@ class SubjectClass(db.Model):
     def __repr__(self):
         return f'<SubjectClass {self.class_id} {self.subject_id}>'
 
+
+# Utility function to check attendance
 def check_att(name, s, c):
-    """Send attendance to the server."""
+    """Send attendance to the server and notify clients via WebSocket."""
     if name not in list_checked:
         list_checked.append(name)
-        print("Attendance checked for:", name, s, c)
+        print(f"Attendance checked for: {name}, {s}, {c}")
         url = "http://127.0.0.1:5000/checking"
-        requests.post(url, json={"id": name, "subject": s, "class": c})
+
+        st = Student.query.filter(Student.student_id == name).first()
+        st_name = st.student_name
+        if not st:
+            print("no st")
+        
+        try:
+            requests.post(url, json={"id": name, "subject": s, "class": c})
+        except requests.RequestException as e:
+            print(f"Error sending attendance: {e}")
+        
+        dt = str(datetime.now())
+        dt = dt[:19:]
+        # Emit the name to all connected clients
+        socketio.emit('attendance_checked', {'name': name, 'subject': s, 'class': c, 'dt':dt, 'st':st_name})
 
 
 @app.route('/')
 def index():
     """Render the homepage."""
-    classes = Class.query.all()
-    subjects = Subject.query.all()
-    return render_template('index5.html', classes=classes, subjects=subjects)
+    try:
+        classes = Class.query.all()
+        subjects = Subject.query.all()
+    except Exception as e:
+        print(f"Error fetching data from the database: {e}")
+        classes, subjects = [], []
+    return render_template('index55.html', classes=classes, subjects=subjects)
 
 
 @app.route('/select_subject', methods=['POST'])
@@ -86,24 +128,18 @@ def process_frame():
     """Process incoming webcam frame."""
     global recognition_active, selected_subject, selected_class, frame_counter
 
-    # Early exit if recognition is stopped
     if not recognition_active:
         return jsonify({"message": "Recognition stopped"})
 
     try:
-        # Decode the frame from base64
         data = request.get_json()
-        frame_data = data['frame']
-        frame_data = base64.b64decode(frame_data.split(',')[1])
+        frame_data = base64.b64decode(data['frame'].split(',')[1])
         frame = np.frombuffer(frame_data, dtype=np.uint8)
         frame = cv2.imdecode(frame, cv2.IMREAD_COLOR)
 
-        # Increment the frame counter
         frame_counter += 1
 
-        # Only process every 30th frame
-        if frame_counter % 20 == 0:
-            # Run YOLO detection
+        if frame_counter % 20 == 0:  # Process every 20th frame
             results = model(frame)
             if results and len(results[0].boxes) > 0:
                 for r in results:
@@ -113,18 +149,16 @@ def process_frame():
                             face = frame[y1:y2, x1:x2]
 
                             try:
-                                # Use DeepFace for recognition
                                 predictions = DeepFace.find(
-                                    face, db_path=db_path, enforce_detection=False, 
+                                    face, db_path=db_path, enforce_detection=False,
                                     model_name='Facenet512', detector_backend='skip', threshold=0.36
                                 )
                                 if predictions and not predictions[0].empty:
-                                    name = predictions[0]['identity'][0].split('\\')[-2]
+                                    name = predictions[0]['identity'][0].split('/')[-2]
                                     check_att(name, selected_subject, selected_class)
                                     print(f"Recognized: {name}")
                             except Exception as e:
                                 print(f"Error during face recognition: {e}")
-
     except Exception as e:
         print(f"Error processing frame: {e}")
 
@@ -142,4 +176,6 @@ def stop_recognition():
 
 
 if __name__ == "__main__":
-    app.run(debug=True, port=5555)
+    with app.app_context():
+        db.create_all()  # Initialize the database tables
+    socketio.run(app, debug=True, port=5555)
