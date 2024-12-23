@@ -107,7 +107,7 @@ class SubjectClass(db.Model):
 
 #subject list
 @app.route('/')
-def subject():
+def home():
     classes = Class.query.all()
     subjects = Subject.query.order_by(Subject.id).all()
     subjectClasses = SubjectClass.query.all()
@@ -200,7 +200,7 @@ def delete_subject(id):
 
 #class list
 @app.route('/class')
-def classes():
+def classes_list():
     classes = Class.query.order_by(Class.id).all()
     return render_template('class_list.html', classes = classes)
 
@@ -375,10 +375,11 @@ def update_status(subject_id, class_id, student_id,id):
 #check attendance
 @app.route('/check_attendance')
 def check_attendance():
-    return render_template('check_attendance.html')
+    subjects = Subject.query.all()
+    return render_template('check_attendance.html', subjects = subjects)
 
-@app.route('/status/<student_id>', methods=['GET'])
-def get_attendance_status(student_id):
+@app.route('/status/<subject_id>/<student_id>', methods=['GET'])
+def get_attendance_status(subject_id,student_id):
     # Retrieve student information
     student = Student.query.filter_by(student_id=student_id).first()
     if not student:
@@ -395,7 +396,7 @@ def get_attendance_status(student_id):
         AttendanceRecord.status
     ).join(Class, AttendanceRecord.class_id == Class.id) \
      .join(Subject, AttendanceRecord.subject_id == Subject.id) \
-     .filter(AttendanceRecord.student_id == student.id)
+     .filter(AttendanceRecord.student_id == student.id, AttendanceRecord.subject_id ==subject_id)
 
     attendance_records = query.all()
     if not attendance_records:
