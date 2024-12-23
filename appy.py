@@ -5,10 +5,14 @@ from deepface import DeepFace
 import cv2
 import numpy as np
 import base64
+from flask_sqlalchemy import SQLAlchemy
 import threading
 
 # Flask app initialization
 app = Flask(__name__)
+app.config["SQLALCHEMY_DATABASE_URI"] = "postgresql://postgres:hai2652003@localhost/student_usth"
+app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False 
+db = SQLAlchemy(app)
 
 # Global variables
 selected_subject = None
@@ -20,6 +24,33 @@ list_checked = []
 stop_event = threading.Event()
 frame_counter = 0  # Counter to track frames
 
+class Class(db.Model):
+    __tablename__ = 'CLASS'
+    id = db.Column(db.Integer, primary_key=True, autoincrement=True)
+    class_name = db.Column(db.String(255), nullable=False)
+
+    def __repr__(self):
+        return f'<Class {self.class_name}>'
+    
+class Subject(db.Model):
+    __tablename__ = 'SUBJECT'
+    id = db.Column(db.Integer, primary_key=True, autoincrement=True)
+    subject_name = db.Column(db.String(255), nullable=False)
+
+    def __repr__(self):
+        return f'<Subject {self.subject_name}>'
+    
+class SubjectClass(db.Model):
+    __tablename__ = 'SUBJECT_CLASS'
+    class_id = db.Column(db.Integer, db.ForeignKey('CLASS.id'), primary_key=True)
+    subject_id = db.Column(db.Integer, db.ForeignKey('SUBJECT.id'), primary_key=True)
+
+    # Relationships
+    class_ = db.relationship('Class', backref=db.backref('subject_classes', lazy=True))
+    subject = db.relationship('Subject', backref=db.backref('subject_classes', lazy=True))
+
+    def __repr__(self):
+        return f'<SubjectClass {self.class_id} {self.subject_id}>'
 
 def check_att(name, s, c):
     """Send attendance to the server."""
@@ -33,7 +64,9 @@ def check_att(name, s, c):
 @app.route('/')
 def index():
     """Render the homepage."""
-    return render_template('index5.html')
+    classes = Class.query.all()
+    subjects = Subject.query.all()
+    return render_template('index5.html', classes=classes, subjects=subjects)
 
 
 @app.route('/select_subject', methods=['POST'])

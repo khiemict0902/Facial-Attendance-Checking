@@ -49,20 +49,6 @@ class Subject(db.Model):
     def __repr__(self):
         return f'<Subject {self.subject_name}>'
 
-
-class Face(db.Model):
-    __tablename__ = 'FACE'
-    id = db.Column(db.Integer, primary_key=True, autoincrement=True)
-    student_id = db.Column(db.Integer, db.ForeignKey('STUDENT.id'), nullable=False)
-    url = db.Column(db.Text, nullable=False)
-
-    # Relationships
-    student = db.relationship('Student', backref=db.backref('faces', lazy=True))
-
-    def __repr__(self):
-        return f'<Face {self.url}>'
-
-
 class AttendanceRecord(db.Model):
     __tablename__ = 'ATTENDANCE_RECORD'
     id = db.Column(db.Integer, primary_key=True, autoincrement=True)
@@ -102,7 +88,7 @@ class AttendanceSummary(db.Model):
     class_ = db.relationship('Class', backref=db.backref('attendance_summaries', lazy=True))
     subject = db.relationship('Subject', backref=db.backref('attendance_summaries', lazy=True))
     student = db.relationship('Student', backref=db.backref('attendance_summaries', lazy=True))
-
+    
     def __repr__(self):
         return f'<AttendanceSummary {self.student_id}>'
 
@@ -118,15 +104,6 @@ class SubjectClass(db.Model):
 
     def __repr__(self):
         return f'<SubjectClass {self.class_id} {self.subject_id}>'
-
-
-#subjects and classes of subjects
-# @app.route('/')
-# def home():
-#     classes = Class.query.all()
-#     subjects = Subject.query.all()
-#     subjectClasses = SubjectClass.query.all()
-#     return render_template('home.html', subjects = subjects, subjectClasses = subjectClasses, classes=classes)
 
 #subject list
 @app.route('/')
@@ -174,11 +151,14 @@ def add_subject_class(subject_id):
         linked_classes = Class.query.filter((Class.id.in_(linked_class_ids))).order_by(Class.id).all()
         return render_template('add_subject-class.html', subject=subject, unlinked_classes=unlinked_classes, linked_classes=linked_classes)
 
+
 @app.route('/<int:subject_id>/delete/<int:id>')
 def delete_subject_class(subject_id, id):
     class_to_delete = SubjectClass.query.filter_by(subject_id=subject_id, class_id=id).first()
 
     try:
+        AttendanceSummary.query.filter_by(subject_id=subject_id, class_id=id).delete()
+        AttendanceRecord.query.filter_by(subject_id=subject_id, class_id=id).delete()
         db.session.delete(class_to_delete)
         db.session.commit()
         return redirect('/')
@@ -352,7 +332,6 @@ def delete_student(class_id, id):
     try:
         AttendanceSummary.query.filter_by(student_id=id).delete()
         AttendanceRecord.query.filter_by(student_id=id).delete()
-        Face.query.filter_by(student_id=id).delete()
         db.session.delete(student_to_delete)
         db.session.commit()
         return redirect(f'/{class_id}/student_list')

@@ -11,7 +11,7 @@
             <h2>{{ subject.subject_name }}</h2>
             <h2>Add Class</h2>
         </div>
-        <h3> Linked class </h3>
+        <h3> Added classes </h3>
         <div class="linked_class-list">
             {% for linked_class in linked_classes %}
                 <div class="linked_class-item">
@@ -21,7 +21,7 @@
             {% endfor %}
         </div>
 
-        <h3> Unlinked class </h3>
+        <h3> Not added classes </h3>
         <form action="/subject/{{subject.id}}/add_class" method="POST" class="information-form">
             <select class="input_form" name="class_id" id="class">
             {% for unlinked_class in unlinked_classes %}

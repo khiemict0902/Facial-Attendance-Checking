@@ -7,22 +7,22 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.0/css/bootstrap.min.css">
 </head>
 <body>
-    <div class="container mt-5">
+    <div class="container">
         <h1 class="text-center">Attendance Status</h1>
-        <form id="attendanceForm" class="my-4">
+        <form id="attendanceForm">
             <div class="mb-3">
                 <label for="studentId" class="form-label">Enter Student ID:</label>
                 <input type="text" id="studentId" class="form-control" placeholder="e.g., S12345">
             </div>
-            <button type="button" class="btn btn-primary" onclick="fetchAttendance()">Check Attendance</button>
+            <button type="button"  onclick="fetchAttendance()">Check Attendance</button>
         </form>
 
         <!-- Hiển thị tên sinh viên -->
-        <div id="studentInfo" class="mb-4">
+        <div id="studentInfo">
             <!-- Tên sinh viên sẽ được hiển thị ở đây -->
         </div>
 
-        <div id="result" class="mt-4">
+        <div id="result">
             <!-- Kết quả điểm danh sẽ được hiển thị ở đây -->
         </div>
     </div>
@@ -33,21 +33,21 @@
             const resultDiv = document.getElementById('result');
             const studentInfoDiv = document.getElementById('studentInfo');
             
-            resultDiv.innerHTML = '<p class="text-info">Fetching attendance...</p>';
+            resultDiv.innerHTML = '<p>Fetching attendance...</p>';
             studentInfoDiv.innerHTML = '';
 
             fetch(`/status/${studentId}`)
                 .then(response => response.json())
                 .then(data => {
                     if (data.message) {
-                        studentInfoDiv.innerHTML = `<p class="text-danger">${data.message}</p>`;
+                        studentInfoDiv.innerHTML = `<p>${data.message}</p>`;
                         resultDiv.innerHTML = '';
                     } else {
                         // Hiển thị tên sinh viên
                         studentInfoDiv.innerHTML = `<h3>Student Name: <span class="text-primary">${data.student_name}</span></h3>`;
 
                         // Hiển thị bảng kết quả
-                        let html = '<table class="table table-bordered">';
+                        let html = '<table>';
                         html += '<thead><tr><th>Class Name</th><th>Subject ID</th><th>Subject Name</th><th>Status</th><th>Date</th></tr></thead><tbody>';
                         data.attendance_records.forEach(record => {
                             html += `<tr>
@@ -63,7 +63,7 @@
                     }
                 })
                 .catch(error => {
-                    resultDiv.innerHTML = `<p class="text-danger">Error fetching attendance records.</p>`;
+                    resultDiv.innerHTML = `<p >Error fetching attendance records.</p>`;
                     console.error(error);
                 });
         }
