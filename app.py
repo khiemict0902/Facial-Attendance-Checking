@@ -107,7 +107,7 @@ class SubjectClass(db.Model):
 
 #subject list
 @app.route('/')
-def subject():
+def home():
     classes = Class.query.all()
     subjects = Subject.query.order_by(Subject.id).all()
     subjectClasses = SubjectClass.query.all()
@@ -200,7 +200,7 @@ def delete_subject(id):
 
 #class list
 @app.route('/class')
-def classes():
+def classes_list():
     classes = Class.query.order_by(Class.id).all()
     return render_template('class_list.html', classes = classes)
 
