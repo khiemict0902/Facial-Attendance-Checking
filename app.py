@@ -258,7 +258,7 @@ def delete_class(id):
 @app.route('/<int:class_id>/student_list')
 def class_student_list(class_id):
     classes = Class.query.filter_by(id = class_id).first()
-    students = Student.query.filter_by(class_id = class_id).order_by(Student.id).all()
+    students = Student.query.filter_by(class_id = class_id).order_by(Student.student_id).all()
     return render_template('class_student_list.html', students = students, classes = classes)
 
 
@@ -345,7 +345,7 @@ def subject_student_list(subject_id, class_id):
 
     classes = Class.query.filter_by(id = class_id).first()
     subject = Subject.query.filter_by(id = subject_id).first()
-    students = Student.query.filter_by(class_id = class_id).order_by(Student.id).all()
+    students = Student.query.filter_by(class_id = class_id).order_by(Student.student_id).all()
     attendanceRecords = AttendanceRecord.query.filter_by(subject_id = subject_id, class_id = class_id).all()
     attendanceSummaries = AttendanceSummary.query.filter_by(subject_id = subject_id, class_id = class_id).all()
     attendance_dates = [attendanceRecord.date for attendanceRecord in attendanceRecords]
