@@ -5,35 +5,39 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Webcam Face Recognition</title>
     <script src="https://cdn.socket.io/4.5.4/socket.io.min.js"></script>
+    <link rel="stylesheet" href="../static/checking_web.css">
 </head>
 <body>
-    <h1>Select Subject</h1>
-    <form id="subjectForm" method="POST" action="/select_subject">
-        <label for="subject">Choose a subject:</label>
-        <select name="subject" id="subject">
-            {% for subject in subjects %}
-                <option value="{{subject.subject_name}}">{{subject.subject_name}}</option>
-            {% endfor %}
-        </select>
-        <label for="class">Choose a class:</label>
-        <select name="class" id="class">
-            {% for class in classes %}
-                <option value="{{class.class_name}}">{{class.class_name}}</option>
-            {% endfor %}
-        </select>
-        <button type="submit">Start Recognition</button>
-    </form>
+    <div class="container">
+        <form id="subjectForm" method="POST" action="/select_subject">
+            <h1>Checking Attendance</h1>
+            <label for="subject">Choose a subject:</label>
+            <select name="subject" id="subject">
+                {% for subject in subjects %}
+                    <option value="{{subject.subject_name}}">{{subject.subject_name}}</option>
+                {% endfor %}
+            </select>
+            <label for="class">Choose a class:</label>
+            <select name="class" id="class">
+                {% for class in classes %}
+                    <option value="{{class.class_name}}">{{class.class_name}}</option>
+                {% endfor %}
+            </select>
+            <button type="submit">Start Recognition</button>
 
-    <div id="webcam-container" style="display:none;">
-        <h2>Webcam Stream</h2>
-        <video id="webcam" autoplay playsinline></video>
-        <canvas id="snapshot" style="display:none;"></canvas>
-        <button id="stopButton">Stop Recognition</button>
-    </div>
-
-    <div>
-        <h2>Recognized Attendees</h2>
-        <ul id="attendance-list"></ul>
+            <div id="attendance-list_container">
+                <h1>Recognized Attendees</h1>
+                <ul id="attendance-list"></ul>
+            </div>
+        </form>
+        
+        <div id="webcam-container">
+            <h1>Webcam Stream</h1>
+            <video id="webcam" autoplay playsinline></video>
+            <canvas id="snapshot"></canvas>
+            <button id="stopButton">Stop Recognition</button>
+        </div>
+    
     </div>
 
     <script>
@@ -60,7 +64,7 @@
         });
 
         async function startWebcam() {
-            webcamContainer.style.display = 'block';
+            webcamContainer.style.display = 'flex';
             const stream = await navigator.mediaDevices.getUserMedia({ video: true });
             webcam.srcObject = stream;
 
@@ -94,7 +98,7 @@
         // Listen for updates from the server
         socket.on('attendance_checked', (data) => {
             const listItem = document.createElement('li');
-            listItem.textContent = `${data.dt} ${data.name} - ${data.st}`;
+            listItem.textContent = `${data.name} - ${data.st} ${data.dt} `;
             attendanceList.appendChild(listItem);
         });
     </script>
