@@ -125,6 +125,7 @@ def add_subject():
             db.session.commit()
             return redirect('/')
         except:
+            db.session.rollback()
             return 'There was an issue adding subject'
 
     else:
@@ -141,6 +142,7 @@ def add_subject_class(subject_id):
             db.session.commit() 
             return redirect('/')
         except:
+            db.session.rollback()
             return 'There was an issue adding class'
 
     else:
@@ -163,6 +165,7 @@ def delete_subject_class(subject_id, id):
         db.session.commit()
         return redirect('/')
     except:
+        db.session.rollback()
         return 'There was a problem deleting that subject'
 
 #edit subject
@@ -177,6 +180,7 @@ def update_subject(id):
             db.session.commit()
             return redirect('/')
         except:
+            db.session.rollback()
             return 'There was an issue updating your task'
 
     else:
@@ -195,6 +199,7 @@ def delete_subject(id):
         db.session.commit()
         return redirect('/')
     except:
+        db.session.rollback()
         return 'There was a problem deleting that subject'
 
 
@@ -216,6 +221,7 @@ def add_class():
             db.session.commit() 
             return redirect('/class')
         except:
+            db.session.rollback()
             return 'There was an issue adding class'
 
     else:
@@ -233,6 +239,7 @@ def update_class(id):
             db.session.commit()
             return redirect('/class')
         except:
+            db.session.rollback()
             return 'There was an issue updating your task'
 
     else:
@@ -252,6 +259,7 @@ def delete_class(id):
         db.session.commit()
         return redirect('/class')
     except:
+        db.session.rollback()
         return 'There was a problem deleting that subject'
     
 #student list of a class
@@ -274,9 +282,8 @@ def add_student(class_id):
         student_name = request.form['student_name']
         date_of_birth = request.form['date_of_birth']
         student_images = request.files.getlist('student_images[]')
-        class_id = class_id
 
-        student_folder = os.path.join(app.config['UPLOAD_FOLDER'], secure_filename(student_id))
+        student_folder = os.path.join(UPLOAD_FOLDER, secure_filename(student_id))
         if not os.path.exists(student_folder):
             os.makedirs(student_folder)
 
@@ -292,12 +299,13 @@ def add_student(class_id):
                 student_image.save(image_path)
                 uploaded_files.append(image_path)
         
-            new_student = Student(student_id = student_id, student_name = student_name, date_of_birth = date_of_birth, class_id =class_id)
+            DeepFace.find(img_path='./db2/BA12-010/Marmik_0.jpg',db_path=UPLOAD_FOLDER,enforce_detection=False, model_name='Facenet512',detector_backend='skip',threshold=0.36)
+            new_student = Student(student_id = student_id, student_name = student_name, date_of_birth = date_of_birth, class_id = class_id)
             db.session.add(new_student)
             db.session.commit()
-            DeepFace.find(img_path='./db2/Marmik/Marmik_0.jpg',db_path=UPLOAD_FOLDER,enforce_detection=False, model_name='Facenet512',detector_backend='skip',threshold=0.36)
             return redirect(f'/{class_id}/student_list')
         except:
+            db.session.rollback()
             return 'There was an issue adding student'
 
     else:
@@ -319,6 +327,7 @@ def update_student(class_id, id):
             db.session.commit()
             return redirect(f'/{class_id}/student_list')
         except:
+            db.session.rollback()
             return 'There was an issue updating your task'
 
     else:
@@ -336,6 +345,7 @@ def delete_student(class_id, id):
         db.session.commit()
         return redirect(f'/{class_id}/student_list')
     except:
+        db.session.rollback()
         return 'There was a problem deleting that subject'
 
 
@@ -349,7 +359,7 @@ def subject_student_list(subject_id, class_id):
     attendanceRecords = AttendanceRecord.query.filter_by(subject_id = subject_id, class_id = class_id).all()
     attendanceSummaries = AttendanceSummary.query.filter_by(subject_id = subject_id, class_id = class_id).all()
     attendance_dates = [attendanceRecord.date for attendanceRecord in attendanceRecords]
-    dates = [date for date in attendance_dates]
+    dates = [datetime.strptime(str(date), '%Y-%m-%d').strftime('%d-%m-%Y') for date in attendance_dates]
     dates = list(set(dates))
     return render_template('subject_student_list.html', students = students, subject = subject, attendanceRecords =attendanceRecords, attendanceSummaries = attendanceSummaries, dates = dates, classes = classes)
 
@@ -366,6 +376,7 @@ def update_status(subject_id, class_id, student_id,id):
             db.session.commit()
             return redirect(f'/{subject_id}/{class_id}/student_list')
         except:
+            db.session.rollback()
             return 'There was an issue updating your task'
 
     else:
@@ -410,7 +421,7 @@ def get_attendance_status(subject_id,student_id):
             "class_name": record.class_name,
             "student_id": record.student_id,
             "subject_name": record.subject_name,
-            "date": record.date.strftime('%Y-%m-%d'),
+            "date": record.date.strftime('%d-%m-%Y'),
             "status": record.status
         })
 

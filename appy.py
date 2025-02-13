@@ -136,7 +136,7 @@ def process_frame():
         frame_data = base64.b64decode(data['frame'].split(',')[1])
         frame = np.frombuffer(frame_data, dtype=np.uint8)
         frame = cv2.imdecode(frame, cv2.IMREAD_COLOR)
-
+    
         frame_counter += 1
 
         if frame_counter % 20 == 0:  # Process every 20th frame

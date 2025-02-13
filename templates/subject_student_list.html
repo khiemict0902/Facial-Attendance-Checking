@@ -31,10 +31,15 @@
                     <td>{{student.date_of_birth}}</td>
                     {% for attendanceRecord in attendanceRecords %}
                         {% if attendanceRecord.student_id == student.id %}
-                            <td>
-                                {{ attendanceRecord.status }}
-                                <a href="/{{subject.id}}/{{classes.id}}/{{student.id}}/{{attendanceRecord.id}}/edit"><button class="list_button edit-btn">Edit</button></a>
-                            </td>
+                            {% if attendanceRecord.status == 'Present' %}
+                                <td>
+                                    x
+                                    <!-- <a href="/{{subject.id}}/{{classes.id}}/{{student.id}}/{{attendanceRecord.id}}/edit"><button class="list_button edit-btn">Edit</button></a> -->
+                                </td>
+                            {% else %} 
+                                <td>
+                                </td>
+                            {% endif %}
                         {% endif %}
                     {% endfor %}
                     {% for attendanceSummary in attendanceSummaries %}
